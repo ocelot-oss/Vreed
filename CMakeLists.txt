@@ -60,6 +60,14 @@ target_link_libraries(VitaReader vita2d freetype png jpeg archive expat bz2 zstd
   SceDisplay_stub SceGxm_stub SceSysmodule_stub SceCtrl_stub ScePgf_stub
   ScePvf_stub SceCommonDialog_stub SceAppMgr_stub SceLibKernel_stub SceTouch_stub SceAudio_stub SceIofilemgr_stub)
 include(config/identity.cmake)
+if(NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/assets/audio/library.pcm")
+  find_program(FFMPEG_EXECUTABLE ffmpeg REQUIRED)
+  execute_process(COMMAND "${FFMPEG_EXECUTABLE}" -nostdin -v error -i "${CMAKE_CURRENT_SOURCE_DIR}/assets/audio/library.mp3"
+    -ac 1 -ar 48000 -f s16le "${CMAKE_CURRENT_SOURCE_DIR}/assets/audio/library.pcm" RESULT_VARIABLE music_result)
+  if(NOT music_result EQUAL 0)
+    message(FATAL_ERROR "Library music conversion failed")
+  endif()
+endif()
 configure_file(config/identity.hpp.in generated/app/identity.hpp @ONLY)
 target_include_directories(VitaReader PRIVATE "${CMAKE_CURRENT_BINARY_DIR}/generated")
 vita_create_self(eboot.bin VitaReader UNSAFE)
@@ -69,4 +77,5 @@ vita_create_vpk(${VITAREADER_NAME}.vpk ${VITAREADER_TITLE_ID} eboot.bin
   FILE assets/branding/bg.png sce_sys/livearea/contents/bg.png
   FILE assets/branding/startup.png sce_sys/livearea/contents/startup.png
   FILE assets/branding/template.xml sce_sys/livearea/contents/template.xml
-  FILE assets/branding/logo.png assets/branding/logo.png)
+  FILE assets/branding/logo.png assets/branding/logo.png
+  FILE assets/audio/library.pcm assets/audio/library.pcm)

@@ -83,7 +83,7 @@ void App::run() {
     try {
       if(state_==State::Opening) {
         if(input.quit)running=false;
-        if(input.back)state_=State::Library;
+        if(input.back) { state_=State::Library; audio_.emit(AudioEvent::StartupMusic); }
         else if(input.nowMs-openingStarted_>=650)state_=State::Reader;
       } else if(state_==State::Library) {
         if(input.quit)running=false;
@@ -120,7 +120,7 @@ void App::run() {
           else if(input.up)settingRow_=(settingRow_+settingsRowCount-1)%settingsRowCount;
           else if(input.down)settingRow_=(settingRow_+1)%settingsRowCount;
           else if(input.previous||input.next)changeSetting(input.next?1:-1,measure);
-        } else if(input.back) { finishTurn(input.nowMs); checkpoint(); state_=State::Library; }
+        } else if(input.back) { finishTurn(input.nowMs); checkpoint(); state_=State::Library; audio_.emit(AudioEvent::StartupMusic); }
         else if(input.bookmark&&settings_.mode==ReadingMode::Book) {
           finishTurn(input.nowMs);
           const bool active=bookmarked();

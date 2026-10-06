@@ -6,3 +6,5 @@ build-host/
 eboot.bin
 __pycache__/
 .tools/
+
+/assets/audio/library.pcm

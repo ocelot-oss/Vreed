@@ -7,7 +7,7 @@ public:
   VitaAudio(); ~VitaAudio();
   VitaAudio(const VitaAudio&)=delete; VitaAudio& operator=(const VitaAudio&)=delete;
   void settings(bool enabled,int volume) { enabled_.store(enabled); volume_.store(volume); }
-  void emit(AudioEvent event) { if(enabled_.load()&&available_.load())events_.push(event); }
+  void emit(AudioEvent event) { if(available_.load()&&(enabled_.load()||event==AudioEvent::StartupMusic||event==AudioEvent::StopMusic))events_.push(event); }
   bool available() const { return available_.load(); }
 private:
   int port_=-1,thread_=-1;
