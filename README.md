@@ -38,7 +38,7 @@ Square pulls the BOOK ribbon and saves an explicit resume point, confirmed by a 
 
 BOOK defaults to a 360 ms perceptual page curl; CLEAN and OLED NIGHT use a 160 ms slide. Choose NONE for instant turns. All modes support front-touch drags starting anywhere on the page: drag horizontally and release to complete or return. Spread turns advance two pages. Rapid physical presses finish the accepted turn before starting the next; cancelled drags never change the saved position.
 
-The library displays books as colored spines on wooden shelves. Touch a spine to select it, then again to open. A quiet original six-second startup tune stops when reading begins. Embedded PNG/JPEG illustrations are fitted into pages; vector SVG, GIF/WebP and CSS backgrounds remain unsupported. Opening a selected book animates it out of the shelf and reveals the reader. See [second device-review changes](docs/DEVICE_REVIEW_2.md).
+The library displays books as colored spines on wooden shelves. Touch a spine to select it, then again to open. The supplied recording loops in the library, fades out when a book opens and restarts on return. Existing sound and volume settings control playback. Embedded PNG/JPEG illustrations are fitted into pages; vector SVG, GIF/WebP and CSS backgrounds remain unsupported. Opening a selected book animates it out of the shelf and reveals the reader. See [second device-review changes](docs/DEVICE_REVIEW_2.md).
 
 Optional quiet paper sounds use original procedural placeholder samples and a dedicated Vita audio worker. They accompany accepted turns and ribbon actions. Four volume levels include mute; sound failure leaves reading usable. Native audio, touch calibration, GPU output and frame pacing remain unvalidated.
 
