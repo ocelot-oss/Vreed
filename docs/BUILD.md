@@ -9,7 +9,7 @@ The workflow `.github/workflows/build-vita.yml` first runs all four portable sui
 3. After both jobs succeed, open the run and download **Artifacts → VitaReader-VPK**. Extract the downloaded ZIP to get `VitaReader.vpk` and its SHA-256 checksum.
 4. Copy the VPK to the Vita and install it with VitaShell.
 
-No secrets are required. The workflow only has read access to repository contents and does not publish a GitHub Release. If a job fails, open its failing step to inspect the compiler output. Workflow configuration has been reviewed locally, but the first remote run is still needed to validate the native compilation. A successful build does not establish hardware performance.
+No secrets are required. The workflow only has read access to repository contents and does not publish a GitHub Release. If a job fails, open its failing step to inspect the compiler output. The first remote run passed on 2026-10-06, including all four tests and native VPK generation. A successful build does not establish hardware performance.
 
 References: [official VitaSDK container](https://github.com/vitasdk/docker), [GitHub artifact upload](https://github.com/actions/upload-artifact).
 

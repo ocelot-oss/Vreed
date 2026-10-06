@@ -1,5 +1,11 @@
 # Validation gate
 
+## GitHub Actions results — 2026-10-06
+
+[Run 37448672300](https://github.com/ocelot-oss/Vreed/actions/runs/37448672300) succeeded for commit `f6e738f4eb61467d3a578a921e5358936f18e16a`. All four portable suites (layout, session, interaction, real EPUB) executed successfully on Ubuntu. Native compilation, linking, SELF and VPK generation succeeded with VitaSDK release 2026.08, sequence 3, toolchain `sdk-core-2026.08.0`, package snapshot `packages-2026.08-snapshot-20260813.3.1`, ARM GCC 15.2.0 and CMake 3.28.3.
+
+The generated 837005-byte VPK was downloaded to local `build/VitaReader.vpk` and verified against the artifact's SHA-256. This supersedes earlier native-build and fresh-host-execution limitations below. Vita installation, display/touch/audio behavior and performance remain unverified.
+
 Do not label milestone 1 hardware-ready until these checks pass with a recorded SDK version, console model and firmware.
 
 - Clean Release build and VPK install through VitaShell.

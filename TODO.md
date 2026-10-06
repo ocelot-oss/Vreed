@@ -2,7 +2,7 @@
 
 ## Validation gates
 
-- Build/link against a known VitaSDK installation, record versions and resolve linker differences.
+- Native build/link passed on GitHub Actions with recorded VitaSDK versions; see `docs/VALIDATION.md`.
 - Produce and install a VPK; validate all three milestones on real hardware.
 - Check PGF font sizes, French accents, per-page clipping, spread readability and true-black output.
 - Inspect native BOOK/CLEAN/OLED/overlay and curl visuals.

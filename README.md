@@ -2,7 +2,7 @@
 
 Native PS Vita EPUB reader, milestones 1–3. C++17, VitaSDK, vita2d system PGF fonts, libarchive ZIP and Expat XML. Targets 960×544. No browser runtime.
 
-**Status: source implementation; Vita compilation and real hardware validation outstanding. No VPK has been produced in this environment.**
+**Status: VitaSDK compilation and four portable test suites passed on GitHub Actions on 2026-10-06. A VPK was produced. Installation and real hardware validation remain outstanding.**
 
 The repository was empty. The available Windows environment had no VitaSDK, CMake, C++ compiler or installed WSL distribution. Public upstream headers and package recipes were inspected rather than assuming APIs.
 
