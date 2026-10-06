@@ -2,6 +2,9 @@
 #include <stdexcept>
 #include <algorithm>
 #include <cmath>
+#include <png.h>
+#include <set>
+#include <cstring>
 #include <psp2/sysmodule.h>
 namespace vr {
 Renderer::Renderer() {
@@ -12,15 +15,54 @@ Renderer::Renderer() {
 }
 Renderer::~Renderer() {
   vita2d_wait_rendering_done();
+  clearImages();
   if(source_)vita2d_free_texture(source_);
   if(destination_)vita2d_free_texture(destination_);
   vita2d_free_pgf(font_); vita2d_fini(); sceSysmoduleUnloadModule(SCE_SYSMODULE_PGF);
 }
 void Renderer::prepareLayout() { vita2d_wait_rendering_done(); } // Measurements may populate the shared glyph atlas.
+void Renderer::clearImages() {
+  for(auto& pair:images_)if(pair.second.texture)vita2d_free_texture(pair.second.texture);
+  images_.clear();
+}
+void Renderer::prepareImages(std::initializer_list<const Page*> pages) {
+  vita2d_wait_rendering_done(); std::set<std::string> wanted;
+  for(auto* page:pages)if(page)for(const auto& item:page->images)wanted.insert(item.image->key);
+  for(auto it=images_.begin();it!=images_.end();) {
+    if(!wanted.count(it->first)) { if(it->second.texture)vita2d_free_texture(it->second.texture); it=images_.erase(it); } else ++it;
+  }
+  std::size_t used=0; for(const auto& pair:images_)used+=pair.second.bytes;
+  for(auto* page:pages)if(page)for(const auto& item:page->images) {
+    const auto& data=*item.image; if(images_.count(data.key))continue;
+    ImageTexture loaded; const auto bytes=std::size_t(data.width)*data.height*4;
+    if(used+bytes<=24*1024*1024) {
+      if(data.png) {
+        png_image image{}; image.version=PNG_IMAGE_VERSION;
+        if(png_image_begin_read_from_memory(&image,data.bytes.data(),data.bytes.size())) {
+          if(image.width==unsigned(data.width)&&image.height==unsigned(data.height)) {
+            image.format=PNG_FORMAT_RGBA; std::vector<unsigned char> rgba(bytes);
+            if(png_image_finish_read(&image,nullptr,rgba.data(),0,nullptr)) {
+              loaded.texture=vita2d_create_empty_texture(data.width,data.height);
+              if(loaded.texture) {
+                auto* dest=static_cast<unsigned char*>(vita2d_texture_get_datap(loaded.texture));
+                const auto stride=vita2d_texture_get_stride(loaded.texture);
+                for(int y=0;y<data.height;++y)std::memcpy(dest+y*stride,rgba.data()+std::size_t(y)*data.width*4,data.width*4);
+              }
+            }
+          }
+          png_image_free(&image);
+        }
+      } else loaded.texture=vita2d_load_JPEG_buffer(data.bytes.data(),data.bytes.size());
+      if(loaded.texture) { loaded.bytes=bytes; used+=bytes; vita2d_texture_set_filters(loaded.texture,SCE_GXM_TEXTURE_FILTER_LINEAR,SCE_GXM_TEXTURE_FILTER_LINEAR); }
+    }
+    images_.emplace(data.key,loaded);
+  }
+}
 Presentation Renderer::readingPresentation(const ReadingSettings& settings) const {
   return presentation(settings,[&](float scale){return vita2d_pgf_text_height(font_,scale,"Agéœ");});
 }
 void Renderer::configure(const Presentation& p) {
+  clearImages();
   auto paper=pageDecoration(p);
   auto ribbon=bookmarkRibbon(p.paper[p.pageCount-1]);
   presentation_=p; paper_=std::move(paper); ribbon_=std::move(ribbon);
@@ -37,17 +79,39 @@ std::string Renderer::fit(const std::string& s,int width,float scale) const {
 void Renderer::begin(bool reading) { reading_=reading; vita2d_set_clear_color(reading?presentation_.theme.background:RGBA8(15,20,25,255)); vita2d_start_drawing(); vita2d_clear_screen(); }
 void Renderer::finish() { vita2d_end_drawing(); vita2d_swap_buffers(); }
 void Renderer::library(const std::vector<Book>& books,std::size_t selected) {
-  text(42,48,"Bibliothèque",1.65f); text(42,82,std::to_string(books.size())+" livres",0.9f,RGBA8(148,161,174,255));
-  if(books.empty()) { text(42,210,"Ajoutez vos fichiers EPUB dans :",1.2f); text(42,252,"ux0:/data/VitaReader/books",1.1f); }
-  auto first=(selected/6)*6;
-  for(std::size_t i=first;i<books.size()&&i<first+6;++i) {
-    int y=108+static_cast<int>(i-first)*61;
-    if(i==selected)vita2d_draw_rectangle(32,y,896,55,RGBA8(36,55,68,255));
-    vita2d_draw_rectangle(44,y+10,4,34,RGBA8(93,177,203,255));
-    text(64,y+26,fit(books[i].title,810,1.15f),1.15f);
-    text(64,y+47,books[i].position.chapter||books[i].position.page?"Lecture en cours":"EPUB",0.8f,RGBA8(148,161,174,255));
+  vita2d_draw_rectangle(0,0,960,544,RGBA8(24,21,21,255));
+  text(42,48,"Ma bibliothèque",1.65f,RGBA8(239,223,190,255)); text(42,80,std::to_string(books.size())+" livres · choisissez une tranche",0.85f,RGBA8(164,151,132,255));
+  for(int row=0;row<2;++row) {
+    const int y=260+row*208;
+    vita2d_draw_rectangle(28,y+14,904,14,RGBA8(0,0,0,90));
+    vita2d_draw_rectangle(28,y,904,18,RGBA8(102,67,43,255));
+    vita2d_draw_rectangle(28,y,904,2,RGBA8(157,111,71,255));
+    for(int line=0;line<5;++line)vita2d_draw_rectangle(32,y+4+line*2,896,1,RGBA8(43,28,18,25));
   }
-  text(42,525,"X Ouvrir    O Retour    Triangle Actualiser    START Quitter",0.9f,RGBA8(148,161,174,255));
+  if(books.empty()) { text(42,210,"Ajoutez vos fichiers EPUB dans :",1.2f); text(42,252,"ux0:/data/VitaReader/books",1.1f); }
+  const unsigned colors[]={RGBA8(77,109,103,255),RGBA8(139,72,59,255),RGBA8(119,97,142,255),RGBA8(154,121,61,255),RGBA8(61,86,121,255),RGBA8(114,91,76,255)};
+  auto first=(selected/20)*20;
+  for(std::size_t i=first;i<books.size()&&i<first+20;++i) {
+    const int slot=int(i-first),row=slot/10,x=48+(slot%10)*87,h=148+int((i*17)%35),bottom=260+row*208,y=bottom-h;
+    const bool active=i==selected; unsigned seed=2166136261u; for(unsigned char ch:books[i].title)seed=(seed^ch)*16777619u;
+    vita2d_draw_rectangle(x+5,y+4,77,h,RGBA8(0,0,0,100));
+    if(active)vita2d_draw_rectangle(x-3,y-3,80,h+5,RGBA8(237,207,133,255));
+    vita2d_draw_rectangle(x,y,74,h,colors[seed%6]);
+    vita2d_draw_rectangle(x+2,y,3,h,RGBA8(255,244,219,36));
+    vita2d_draw_rectangle(x+69,y,5,h,RGBA8(0,0,0,38));
+    vita2d_draw_rectangle(x+8,y+13,56,1,RGBA8(239,218,173,160));
+    std::string remaining=books[i].title;
+    for(int line=0;line<5&&!remaining.empty();++line) {
+      std::size_t end=remaining.size();
+      while(end>0&&measure(remaining.substr(0,end),0.72f)>56) { --end; while(end>0&&(static_cast<unsigned char>(remaining[end])&0xc0)==0x80)--end; }
+      if(!end)break; auto split=remaining.rfind(' ',end); if(split!=std::string::npos&&split>0)end=split;
+      const auto label=remaining.substr(0,end); text(x+9,y+38+line*18,label,0.72f,RGBA8(249,239,216,255));
+      remaining.erase(0,end); while(!remaining.empty()&&remaining.front()==' ')remaining.erase(0,1);
+    }
+    vita2d_draw_rectangle(x+8,bottom-27,56,1,RGBA8(239,218,173,150));
+    text(x+10,bottom-9,books[i].position.resumePinned?"Signet":"EPUB",0.65f,RGBA8(242,224,186,255));
+  }
+  text(42,518,"X Ouvrir · Toucher pour sélectionner · Triangle Actualiser",0.8f,RGBA8(186,172,149,255));
 }
 void Renderer::drawPage(const Page& page,int index,Position position,std::size_t count,std::size_t chapters) {
   const auto area=presentation_.content[index];
@@ -55,6 +119,11 @@ void Renderer::drawPage(const Page& page,int index,Position position,std::size_t
   vita2d_set_clip_rectangle(area.x,area.y,area.x+area.width,area.y+area.height);
   vita2d_enable_clipping();
   for(const auto& line:page.lines)text(area.x,area.y+line.y,line.text,line.scale,presentation_.theme.text);
+  for(const auto& image:page.images) {
+    const auto it=images_.find(image.image->key);
+    if(it!=images_.end()&&it->second.texture)vita2d_draw_texture_scale(it->second.texture,area.x+(area.width-image.width)/2,area.y+image.y,float(image.width)/image.image->width,float(image.height)/image.image->height);
+    else text(area.x,area.y+image.y+24,"Illustration indisponible",0.8f,presentation_.theme.secondary);
+  }
   vita2d_disable_clipping();
   std::string label=std::to_string(position.page+1)+" / "+std::to_string(count);
   if(presentation_.pageCount==2)label=std::to_string(position.chapter+1)+" · "+label;
@@ -77,11 +146,12 @@ void Renderer::reader(const Book& book,const Page& page,Position p,std::size_t c
   drawRibbon(ribbon);
 }
 void Renderer::drawRibbon(float amount) {
-  if(!presentation_.theme.physical||amount<=0)return;
+  if(!presentation_.theme.physical||amount<0)return;
   const auto sheet=presentation_.paper[presentation_.pageCount-1];
-  const int top=sheet.y-3,offset=-int((1-std::clamp(amount,0.0f,1.0f))*70);
-  for(const auto& paint:ribbon_) {
-    auto r=paint.bounds; r.y+=offset;
+  const int top=sheet.y-3,offset=-int((1-std::clamp(amount,0.0f,1.0f))*45);
+  for(int page=0;page<presentation_.pageCount;++page)for(const auto& paint:ribbon_) {
+    auto r=paint.bounds; r.x+=presentation_.paper[page].x-sheet.x;
+    r.y+=page==0?offset:-45;
     if(r.y+r.height<=top)continue;
     if(r.y<top) { r.height-=top-r.y; r.y=top; }
     vita2d_draw_rectangle(r.x,r.y,r.width,r.height,paint.color);
@@ -108,7 +178,7 @@ bool Renderer::ensureSurfaces() {
 void Renderer::capture(vita2d_texture* target,const Book& book,Session& session,const Session::VisiblePage& second) {
   vita2d_set_clear_color(presentation_.theme.background);
   vita2d_start_drawing_advanced(target,0); vita2d_clear_screen();
-  reader(book,session.page(),session.position,session.pageCount(),session.chapterCount(),second,0);
+  reader(book,session.page(),session.position,session.pageCount(),session.chapterCount(),second,-1);
   vita2d_end_drawing(); vita2d_wait_rendering_done();
 }
 bool Renderer::captureTurn(const Book& book,Session& current,const Session::VisiblePage& currentSecond,Session& next,const Session::VisiblePage& nextSecond) {

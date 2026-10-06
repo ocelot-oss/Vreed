@@ -1,5 +1,6 @@
 #include "reader/layout.hpp"
 #include <stdexcept>
+#include <algorithm>
 namespace vr {
 std::size_t pageForOffset(const std::vector<Page>& pages,std::size_t offset) {
   if(pages.empty())throw std::runtime_error("No reader pages");
@@ -12,10 +13,17 @@ std::vector<Page> paginate(const Chapter& chapter,const Layout& l,const Measure&
   std::vector<Page> pages(1); int y=0; std::size_t base=0;
   auto emit=[&](const std::string& text,float scale,std::size_t offset) {
     if(y+l.lineHeight>l.height) { pages.emplace_back(); y=0; }
-    if(pages.back().lines.empty())pages.back().offset=offset;
+    if(pages.back().lines.empty()&&pages.back().images.empty())pages.back().offset=offset;
     pages.back().lines.push_back({text,y+l.lineHeight,scale,offset}); y+=l.lineHeight;
   };
   for(const auto& block:chapter.blocks) {
+    if(block.image) {
+      const float scale=std::min({1.0f,float(l.width)/block.image->width,float(l.height-10)/block.image->height});
+      const int w=std::max(1,int(block.image->width*scale)),h=std::max(1,int(block.image->height*scale));
+      if(y+h>l.height) { pages.emplace_back(); y=0; }
+      if(pages.back().lines.empty()&&pages.back().images.empty())pages.back().offset=base;
+      pages.back().images.push_back({block.image,y,w,h,base}); y+=h+10; ++base; continue;
+    }
     const float scale=block.kind==Block::Kind::Heading?l.scale*1.15f:l.scale;
     std::string text; for(const auto& run:block.runs)text+=run.text;
     std::string line; std::size_t lineOffset=base;

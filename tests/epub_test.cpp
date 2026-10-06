@@ -11,6 +11,18 @@ int main(int argc,char** argv) {
   bool bold=false,italic=false,accents=false;
   for(auto& b:chapter.blocks)for(auto& r:b.runs) { bold|=r.bold; italic|=r.italic; accents|=r.text.find("œ")!=std::string::npos; }
   assert(bold&&italic&&accents);
+  bool image=false,elision=false;
+  for(const auto& block:chapter.blocks) {
+    if(block.image) { assert(block.image->width==96&&block.image->height==64&&block.image->png); image=true; }
+    std::string text; for(const auto& run:block.runs)text+=run.text;
+    if(text.find("L'aventure")!=std::string::npos) { assert(text.find("l’horizon")!=std::string::npos&&text.find("D'abord")!=std::string::npos); elision=true; }
+  }
+  assert(image&&elision);
+  vr::Layout small; small.width=48; small.height=80; small.lineHeight=20;
+  auto pages=vr::paginate(chapter,small,[](const std::string& s,float){return int(s.size());});
+  bool placed=false; for(const auto& page:pages)for(const auto& picture:page.images) { assert(picture.width==48&&picture.height==32&&picture.y+picture.height<=small.height); placed=true; }
+  assert(placed);
+  assert(!vr::imageData("bad","not an image"));
   vr::Book book; book.path=argv[1]; book.position={999999,999999}; vr::Session reader;
   auto measure=[](const std::string& s,float){return static_cast<int>(s.size())*10;};
   reader.open(book,measure); assert(reader.position.chapter==1); assert(reader.position.page+1==reader.pageCount());

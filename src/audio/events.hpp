@@ -4,7 +4,7 @@
 #include <cstddef>
 #include <cstdint>
 namespace vr {
-enum class AudioEvent { PageForward, PageBackward, BookmarkInsert, BookmarkRemove };
+enum class AudioEvent { PageForward, PageBackward, BookmarkInsert, BookmarkRemove, StartupMusic, StopMusic };
 // UI producer, audio-thread consumer. Bounded, no allocation or locking on the UI path.
 class AudioEvents {
 public:
@@ -22,9 +22,9 @@ public:
   void stop() { cursor_=length_; }
   void render(std::int16_t* output,std::size_t frames,int volume);
 private:
-  static constexpr int maxSamples=6720;
+  static constexpr int maxSamples=8640;
   std::array<std::array<std::int16_t,maxSamples>,4> samples_{};
-  std::array<int,4> lengths_{6720,6720,2400,2400};
+  std::array<int,4> lengths_{6720,6720,8640,2400};
   int event_=0,cursor_=0,length_=0;
 };
 }

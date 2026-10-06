@@ -5,6 +5,8 @@
 #include "rendering/page_style.hpp"
 #include "rendering/curl.hpp"
 #include <vita2d.h>
+#include <map>
+#include <initializer_list>
 namespace vr {
 class Renderer {
 public:
@@ -12,6 +14,7 @@ public:
   Renderer(const Renderer&)=delete; Renderer& operator=(const Renderer&)=delete;
   int measure(const std::string& text,float scale) const;
   void prepareLayout();
+  void prepareImages(std::initializer_list<const Page*> pages);
   Presentation readingPresentation(const ReadingSettings& settings) const;
   void configure(const Presentation& presentation);
   void begin(bool reading); void finish();
@@ -26,6 +29,9 @@ public:
   void settings(const ReadingSettings& settings,int selected);
   void message(const std::string& message);
 private:
+  struct ImageTexture { vita2d_texture* texture=nullptr; std::size_t bytes=0; };
+  std::map<std::string,ImageTexture> images_;
+  void clearImages();
   vita2d_pgf* font_=nullptr;
   Presentation presentation_{};
   bool reading_=false;

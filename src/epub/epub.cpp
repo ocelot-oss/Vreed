@@ -83,16 +83,25 @@ void Epub::open(const std::string& path) {
 }
 Chapter Epub::chapter(std::size_t index) const {
   if(index>=spine.size())throw std::runtime_error("Invalid chapter");
-  Chapter result; Block current; int body=0,skip=0,bold=0,italic=0; bool space=false;
+  Chapter result; Block current; int body=0,skip=0,bold=0,italic=0; bool space=false; std::size_t imageBytes=0;
   auto flush=[&] { if(!current.runs.empty())result.blocks.push_back(std::move(current)); current=Block{}; space=false; };
   auto append=[&](const std::string& s) { if(current.runs.empty()||current.runs.back().bold!=(bold>0)||current.runs.back().italic!=(italic>0))current.runs.push_back({{},bold>0,italic>0}); current.runs.back().text+=s; };
-  Xml x; x.start=[&](std::string n,const char**) {
+  Xml x; x.start=[&](std::string n,const char** attrs) {
     if(n=="body")++body; if(!body)return;
     if(n=="script"||n=="style")++skip; if(skip)return;
     if(n=="p"||n=="div"||n=="li"||n=="blockquote"||(n.size()==2&&n[0]=='h'&&n[1]>='1'&&n[1]<='6')) { flush(); if(n[0]=='h')current.kind=Block::Kind::Heading; }
     if(n=="b"||n=="strong")++bold; if(n=="i"||n=="em")++italic;
     if(n=="br") { append("\n"); space=false; }
-    if(n=="img") { flush(); Block image; image.kind=Block::Kind::Image; image.runs.push_back({"[Illustration]"}); result.blocks.push_back(std::move(image)); }
+    if(n=="img"||n=="image"||n=="object") {
+      flush(); Block image; image.kind=Block::Kind::Image;
+      auto source=attr(attrs,n=="img"?"src":n=="object"?"data":"href");
+      try {
+        const auto name=resolve(parent(spine[index]),source); auto bytes=entry(name);
+        if(imageBytes+bytes.size()<=8*1024*1024) { image.image=imageData(path_+":"+name,std::move(bytes)); if(image.image)imageBytes+=image.image->bytes.size(); }
+      } catch(const std::exception&) {}
+      if(!image.image)image.runs.push_back({"[Illustration non prise en charge]"});
+      result.blocks.push_back(std::move(image));
+    }
   };
   x.end=[&](std::string n) {
     if(n=="script"||n=="style") { --skip; return; } if(!body||skip)return;
@@ -100,7 +109,20 @@ Chapter Epub::chapter(std::size_t index) const {
     if(n=="p"||n=="div"||n=="li"||n=="blockquote"||(n.size()==2&&n[0]=='h'))flush();
     if(n=="body") { flush(); --body; }
   };
-  x.text=[&](std::string s) { if(!body||skip)return; for(unsigned char c:s) { if(c==' '||c=='\n'||c=='\r'||c=='\t')space=true; else { if(space&&!current.runs.empty())append(" "); space=false; append(std::string(1,static_cast<char>(c))); } } };
+  x.text=[&](std::string s) { if(!body||skip)return; for(unsigned char c:s) { if(c==' '||c=='\n'||c=='\r'||c=='\t')space=true; else {
+    if(space&&!current.runs.empty()) {
+      std::string tail; for(auto it=current.runs.rbegin();it!=current.runs.rend()&&tail.size()<24;++it)tail=it->text.substr(it->text.size()>24?it->text.size()-24:0)+tail;
+      const bool apostrophe=!tail.empty()&&(tail.back()=='\''||(tail.size()>=3&&tail.compare(tail.size()-3,3,"’")==0));
+      bool elision=false;
+      if(apostrophe) {
+        tail.resize(tail.size()-(tail.back()=='\''?1:3)); const auto last=tail.find_last_of(" \n\t"); if(last!=std::string::npos)tail=tail.substr(last+1);
+        for(char& ch:tail)if(ch>='A'&&ch<='Z')ch+=32;
+        for(const auto* prefix:{"l","d","j","t","m","s","n","c","qu","jusqu","lorsqu","puisqu"})if(tail==prefix)elision=true;
+      }
+      if(!elision)append(" ");
+    }
+    space=false; append(std::string(1,static_cast<char>(c)));
+  } } };
   parse(entry(spine[index]),x); flush(); return result;
 }
 }

@@ -1,9 +1,10 @@
 #pragma once
 #include <string>
 #include <vector>
+#include "epub/image.hpp"
 namespace vr {
 struct Run { std::string text; bool bold=false, italic=false; };
-struct Block { enum class Kind { Paragraph, Heading, Image }; Kind kind=Kind::Paragraph; std::vector<Run> runs; };
+struct Block { enum class Kind { Paragraph, Heading, Image }; Kind kind=Kind::Paragraph; std::vector<Run> runs; std::shared_ptr<const ImageData> image; };
 struct Chapter { std::vector<Block> blocks; };
 class Epub {
 public:

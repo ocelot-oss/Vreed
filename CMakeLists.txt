@@ -14,7 +14,7 @@ if(VITAREADER_HOST_TESTS)
   add_test(NAME session COMMAND session_test)
   add_executable(interaction_test tests/interaction_test.cpp tests/fixture_epub.cpp src/reader/session.cpp src/reader/layout.cpp
     src/reader/transition.cpp src/reader/turn_transaction.cpp src/reader/settings.cpp src/input/touch.cpp
-    src/rendering/curl.cpp src/storage/settings.cpp src/audio/events.cpp)
+    src/rendering/curl.cpp src/storage/settings.cpp src/storage/position.cpp src/audio/events.cpp)
   target_include_directories(interaction_test PRIVATE src)
   add_test(NAME interaction COMMAND interaction_test "${CMAKE_CURRENT_BINARY_DIR}/settings-test.cfg")
   set(core_test_targets layout_test session_test interaction_test)
@@ -54,10 +54,11 @@ add_executable(VitaReader src/main.cpp src/app/app.cpp src/platform/vita.cpp
 target_sources(VitaReader PRIVATE src/reader/transition.cpp src/reader/turn_transaction.cpp src/rendering/curl.cpp
   src/input/touch.cpp src/storage/settings.cpp src/audio/events.cpp src/platform/vita_audio.cpp)
 target_include_directories(VitaReader PRIVATE src)
+target_compile_definitions(VitaReader PRIVATE VITAREADER_VITA=1)
 target_compile_options(VitaReader PRIVATE -Wall -Wextra -Wpedantic)
 target_link_libraries(VitaReader vita2d freetype png jpeg archive expat bz2 zstd z m
   SceDisplay_stub SceGxm_stub SceSysmodule_stub SceCtrl_stub ScePgf_stub
-  ScePvf_stub SceCommonDialog_stub SceAppMgr_stub SceLibKernel_stub SceTouch_stub SceAudio_stub)
+  ScePvf_stub SceCommonDialog_stub SceAppMgr_stub SceLibKernel_stub SceTouch_stub SceAudio_stub SceIofilemgr_stub)
 include(config/identity.cmake)
 vita_create_self(eboot.bin VitaReader)
 vita_create_vpk(VitaReader.vpk ${VITAREADER_TITLE_ID} eboot.bin

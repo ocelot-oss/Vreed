@@ -29,13 +29,13 @@ Input Vita::poll() {
   Input in;
   in.nowMs=double(now)/1000;
   if(touchReady_) {
-    SceTouchData data{}; const bool valid=sceTouchPeek(SCE_TOUCH_PORT_FRONT,&data,1)>0;
+    SceTouchData data{}; const int received=sceTouchPeek(SCE_TOUCH_PORT_FRONT,&data,1); const bool valid=received>0;
     std::array<Contact,SCE_TOUCH_MAX_REPORT> contacts{};
     const int count=valid?std::min(int(data.reportNum),SCE_TOUCH_MAX_REPORT):0;
     for(int i=0;i<count;++i)contacts[i]={data.report[i].id,
       std::clamp((data.report[i].x-minX_)*959/rangeX_,0.0f,959.0f),
       std::clamp((data.report[i].y-minY_)*543/rangeY_,0.0f,543.0f)};
-    in.touch=touch_.sample(contacts.data(),count,valid);
+    if(received!=0)in.touch=touch_.sample(contacts.data(),count,valid);
   }
   in.up=edge&SCE_CTRL_UP; in.down=edge&SCE_CTRL_DOWN;
   in.previous=edge&(SCE_CTRL_LEFT|SCE_CTRL_LTRIGGER); in.next=edge&(SCE_CTRL_RIGHT|SCE_CTRL_RTRIGGER);

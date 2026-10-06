@@ -9,6 +9,7 @@
 #include <fstream>
 #include <iostream>
 #include <algorithm>
+#include <filesystem>
 using namespace vr;
 int main(int argc,char** argv) {
   assert(argc==2); const std::string file=argv[1];
@@ -78,6 +79,16 @@ int main(int argc,char** argv) {
   { std::ofstream bad(file); bad<<"VRS1\n99 0 1 1 1 2 1 1 1 1\n"; }
   assert(loadSettings(file).mode==ReadingMode::Book);
   std::remove(file.c_str());
+  const auto positions=(std::filesystem::path(file).parent_path()/"position-test").string();
+  std::filesystem::create_directories(positions);
+  Position resume{2,3,123,true,true};
+  for(int i=0;i<10;++i) {
+    resume.offset=123+i; assert(savePosition("test-book.epub",resume,positions));
+    const auto loaded=loadPosition("test-book.epub",positions);
+    assert(loaded.resumePinned&&loaded.hasOffset&&loaded.offset==resume.offset&&loaded.chapter==2);
+  }
+  resume.resumePinned=false; assert(savePosition("test-book.epub",resume,positions));
+  assert(!loadPosition("test-book.epub",positions).resumePinned);
 
   AudioEvents sounds; AudioEvent sound;
   assert(!sounds.pop(sound));
@@ -90,6 +101,13 @@ int main(int argc,char** argv) {
   assert(std::any_of(pcm.begin(),pcm.end(),[](auto sample){return sample!=0;}));
   bank.render(pcm.data(),pcm.size(),0); assert(std::all_of(pcm.begin(),pcm.end(),[](auto sample){return sample==0;}));
   bank.stop(); bank.render(pcm.data(),pcm.size(),3); assert(std::all_of(pcm.begin(),pcm.end(),[](auto sample){return sample==0;}));
+  bank.play(AudioEvent::StartupMusic); bank.render(pcm.data(),pcm.size(),1);
+  assert(std::any_of(pcm.begin(),pcm.end(),[](auto sample){return sample!=0;}));
+  bank.play(AudioEvent::StopMusic); bank.render(pcm.data(),pcm.size(),3);
+  assert(std::all_of(pcm.begin(),pcm.end(),[](auto sample){return sample==0;}));
+  settings.mode=ReadingMode::Clean; view=presentation(settings,[](float s){return int(s*20);});
+  assert(pageEdge(view,{TouchPhase::Down,1,950,300})==1);
+  assert(pageEdge(view,{TouchPhase::Down,1,4,300})==-1);
 
   auto measure=[](const std::string& s,float){return int(s.size())*10;};
   Layout layout; layout.width=60; layout.height=20; layout.lineHeight=20;

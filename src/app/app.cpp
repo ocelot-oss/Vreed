@@ -44,6 +44,7 @@ void App::requestTurn(int direction,const Measure& measure,const TouchPoint* tou
   try {
     candidateSecond_={};
     if(presentation_.pageCount==2)candidateSecond_=turn_.candidate()->secondPage(measure);
+    renderer_.prepareImages({&session_.page(),second_.page.get(),&turn_.candidate()->page(),candidateSecond_.page.get()});
     auto kind=animationFor(settings_);
     if(kind!=TransitionKind::None&&!renderer_.captureTurn(books_[selected_],session_,second_,*turn_.candidate(),candidateSecond_)) {
       kind=TransitionKind::None; error_="Animation indisponible : changement instantané";
@@ -56,13 +57,15 @@ void App::requestTurn(int direction,const Measure& measure,const TouchPoint* tou
   } catch(...) { turn_.abort(); candidateSecond_={}; throw; }
 }
 void App::checkpoint() {
+  if(books_[selected_].position.resumePinned)return;
   books_[selected_].position=session_.position;
+  books_[selected_].position.resumePinned=false;
   if(!savePosition(books_[selected_].path,session_.position))error_="Impossible de sauvegarder la position";
 }
 void App::run() {
   try {
     prepareStorage(); settings_=loadSettings(config::settings); audio_.settings(settings_.pageSound,settings_.soundVolume);
-    books_=discover(config::books);
+    books_=discover(config::books); audio_.emit(AudioEvent::StartupMusic);
   } catch(const std::exception& e) { error_=e.what(); }
   auto measure=[&](const std::string& s,float scale){return renderer_.measure(s,scale);};
   bool running=true;
@@ -76,16 +79,26 @@ void App::run() {
     try {
       if(state_==State::Library) {
         if(input.quit)running=false;
-        if(input.up&&selected_>0)--selected_;
-        if(input.down&&selected_+1<books_.size())++selected_;
+        if((input.up||input.previous)&&selected_>0)--selected_;
+        if((input.down||input.next)&&selected_+1<books_.size())++selected_;
         if(input.rescan) { books_=discover(config::books); selected_=0; error_.clear(); }
         if(input.back)error_.clear();
+        if(input.touch.phase==TouchPhase::Down&&input.touch.x>=48&&input.touch.x<918) {
+          const int row=input.touch.y>=290?1:0,col=int((input.touch.x-48)/87);
+          const auto index=(selected_/20)*20+row*10+col;
+          if(col<10&&index<books_.size()&&input.touch.y>=100+row*208&&input.touch.y<=260+row*208) {
+            if(index==selected_)input.open=true; else selected_=index;
+          }
+        }
         if(input.open&&!books_.empty()) {
           renderer_.prepareLayout();
           const auto next=renderer_.readingPresentation(settings_);
           session_.open(books_[selected_],measure,next.layout);
           renderer_.configure(next); presentation_=next;
-          state_=State::Reader; overlay_=false; bookmark_={}; ribbon_.setVisible(false,input.nowMs,true);
+          state_=State::Reader; overlay_=false;
+          const auto saved=books_[selected_].position;
+          bookmark_={saved.resumePinned,saved.chapter,saved.offset}; ribbon_.setVisible(bookmarked(),input.nowMs,true);
+          audio_.emit(AudioEvent::StopMusic);
           refreshPages_=true; error_.clear();
         }
       } else {
@@ -101,12 +114,15 @@ void App::run() {
         else if(input.bookmark&&settings_.mode==ReadingMode::Book) {
           finishTurn(input.nowMs);
           const bool active=bookmarked();
-          bookmark_={!active,session_.position.chapter,session_.position.offset};
-          ribbon_.setVisible(!active,input.nowMs);
-          audio_.emit(active?AudioEvent::BookmarkRemove:AudioEvent::BookmarkInsert);
+          auto saved=session_.position; saved.resumePinned=!active;
+          if(savePosition(books_[selected_].path,saved)) {
+            books_[selected_].position=saved;
+            bookmark_={!active,saved.chapter,saved.offset}; ribbon_.setVisible(!active,input.nowMs);
+            audio_.emit(active?AudioEvent::BookmarkRemove:AudioEvent::BookmarkInsert); error_.clear();
+          } else error_="Impossible de sauvegarder le marque-page";
         } else if(input.previous||input.next) {
           requestTurn(input.next?1:-1,measure);
-        } else if(settings_.mode==ReadingMode::Book) {
+        } else {
           if(input.touch.phase==TouchPhase::Down) {
             const auto direction=pageEdge(presentation_,input.touch);
             if(direction)requestTurn(direction,measure,&input.touch);
@@ -118,7 +134,9 @@ void App::run() {
     } catch(const std::exception& e) { error_=e.what(); }
     const auto renderNow=platform_.nowMs();
     if(state_==State::Reader) {
-      turnEvents(turn_.tick(renderNow),renderNow); refreshSecond(measure);
+      turnEvents(turn_.tick(renderNow),renderNow);
+      const bool changed=refreshPages_; refreshSecond(measure);
+      if(changed)renderer_.prepareImages({&session_.page(),second_.page.get()});
       ribbon_.setVisible(bookmarked()&&settings_.mode==ReadingMode::Book,renderNow); ribbon_.tick(renderNow);
     }
     renderer_.begin(state_==State::Reader);

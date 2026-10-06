@@ -1,5 +1,6 @@
 #include "input/touch.hpp"
 #include "reader/transition.hpp"
+#include <algorithm>
 namespace vr {
 TouchPoint TouchTracker::sample(const Contact* contacts,int count,bool valid) {
   if(!valid||count>1) {
@@ -17,11 +18,11 @@ TouchPoint TouchTracker::sample(const Contact* contacts,int count,bool valid) {
   return {down?TouchPhase::Down:TouchPhase::Move,id_,x_,y_};
 }
 int pageEdge(const Presentation& p,const TouchPoint& touch) {
-  if(!p.theme.physical||touch.phase!=TouchPhase::Down)return 0;
+  if(touch.phase!=TouchPhase::Down)return 0;
   const auto left=p.paper[0],right=p.paper[p.pageCount-1];
   if(touch.y<left.y||touch.y>left.y+left.height)return 0;
-  if(touch.x>=right.x+right.width-interaction::edgeZone&&touch.x<=right.x+right.width)return 1;
-  if(touch.x>=left.x&&touch.x<=left.x+interaction::edgeZone)return -1;
+  if(touch.x>=right.x+right.width-std::max(96.0f,interaction::edgeZone)&&touch.x<=959)return 1;
+  if(touch.x<=left.x+std::max(96.0f,interaction::edgeZone)&&touch.x>=0)return -1;
   return 0;
 }
 }

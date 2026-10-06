@@ -32,9 +32,11 @@ Position is saved after navigation, setting changes and on return. New checkpoin
 
 Triangle opens an overlay for mode, BOOK layout, font size, line spacing, margins, animation, page sound and volume. Large type falls back to one page rather than shrinking the text to force a spread. The requested layout is restored when choosing a smaller font. Settings persist across launches in `ux0:/data/VitaReader/settings.cfg`; malformed files use safe defaults.
 
-Square toggles one temporary bookmark on the current BOOK page. Its notched red ribbon enters/exits over 220 ms, follows the marked text when repaginating and resets when opening a book. Bookmarks remain temporary.
+Square pulls the BOOK ribbon and saves an explicit resume point, confirmed by a short chime only after successful storage. That point survives further navigation and application restarts. Square on the marked page retracts it and restores automatic resume; Square elsewhere moves it to the current page. Each sheet keeps a visible retracted tip. In a spread, Square marks the left page.
 
-BOOK defaults to a 360 ms perceptual page curl; CLEAN and OLED NIGHT use a 160 ms slide. Choose NONE for instant turns. BOOK also supports front-touch drags starting at an outer page edge: drag horizontally and release to complete or return. Spread turns advance two pages. Rapid physical presses finish the accepted turn before starting the next; cancelled drags never change the saved position.
+BOOK defaults to a 360 ms perceptual page curl; CLEAN and OLED NIGHT use a 160 ms slide. Choose NONE for instant turns. All modes support front-touch drags starting at an outer page edge or screen margin: drag horizontally and release to complete or return. Spread turns advance two pages. Rapid physical presses finish the accepted turn before starting the next; cancelled drags never change the saved position.
+
+The library displays books as colored spines on wooden shelves. Touch a spine to select it, then again to open. A quiet original six-second startup tune stops when reading begins. Embedded PNG/JPEG illustrations are fitted into pages; vector SVG, GIF/WebP and CSS backgrounds remain unsupported. See [first device-review changes](docs/DEVICE_REVIEW_1.md).
 
 Optional quiet paper sounds use original procedural placeholder samples and a dedicated Vita audio worker. They accompany accepted turns and ribbon actions. Four volume levels include mute; sound failure leaves reading usable. Native audio, touch calibration, GPU output and frame pacing remain unvalidated.
 

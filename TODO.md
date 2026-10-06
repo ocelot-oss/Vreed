@@ -11,7 +11,7 @@
 
 ## Deferred features
 
-- Persisted bookmarks and bookmark navigation; settings persistence is implemented.
+- Bookmark list/navigation; the current bookmark and resume point now persist (VR3).
 - Licensed book font, styled typography and text shaping.
 - PDF, highlighting, annotations and search.
 - Cover thumbnails and final LiveArea assets.
