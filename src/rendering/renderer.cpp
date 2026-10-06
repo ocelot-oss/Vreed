@@ -53,7 +53,13 @@ void Renderer::prepareImages(std::initializer_list<const Page*> pages) {
           png_image_free(&image);
         }
       } else loaded.texture=vita2d_load_JPEG_buffer(data.bytes.data(),data.bytes.size());
-      if(loaded.texture) { loaded.bytes=bytes; used+=bytes; vita2d_texture_set_filters(loaded.texture,SCE_GXM_TEXTURE_FILTER_LINEAR,SCE_GXM_TEXTURE_FILTER_LINEAR); }
+      if(loaded.texture) {
+        // Raster images own no render target/depth buffer. Some vita2d versions
+        // leave these optional fields uninitialized on ordinary textures.
+        loaded.texture->gxm_rtgt=nullptr; loaded.texture->depth_UID=0;
+        loaded.bytes=bytes; used+=bytes;
+        vita2d_texture_set_filters(loaded.texture,SCE_GXM_TEXTURE_FILTER_LINEAR,SCE_GXM_TEXTURE_FILTER_LINEAR);
+      }
     }
     images_.emplace(data.key,loaded);
   }
