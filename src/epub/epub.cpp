@@ -109,7 +109,11 @@ Chapter Epub::chapter(std::size_t index) const {
     if(n=="p"||n=="div"||n=="li"||n=="blockquote"||(n.size()==2&&n[0]=='h'))flush();
     if(n=="body") { flush(); --body; }
   };
-  x.text=[&](std::string s) { if(!body||skip)return; for(unsigned char c:s) { if(c==' '||c=='\n'||c=='\r'||c=='\t')space=true; else {
+  x.text=[&](std::string s) { if(!body||skip)return; for(std::size_t i=0;i<s.size();++i) {
+    unsigned char c=s[i];
+    if(c==0xc2&&i+1<s.size()&&static_cast<unsigned char>(s[i+1])==0xa0) { c=' '; ++i; }
+    else if(c==0xe2&&i+2<s.size()&&static_cast<unsigned char>(s[i+1])==0x80&&static_cast<unsigned char>(s[i+2])==0xaf) { c=' '; i+=2; }
+    if(c==' '||c=='\n'||c=='\r'||c=='\t')space=true; else {
     if(space&&!current.runs.empty()) {
       std::string tail; for(auto it=current.runs.rbegin();it!=current.runs.rend()&&tail.size()<24;++it)tail=it->text.substr(it->text.size()>24?it->text.size()-24:0)+tail;
       const bool apostrophe=!tail.empty()&&(tail.back()=='\''||(tail.size()>=3&&tail.compare(tail.size()-3,3,"’")==0));
