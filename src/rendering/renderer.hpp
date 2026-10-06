@@ -27,6 +27,7 @@ public:
                    Session& next,const Session::VisiblePage& nextSecond);
   void transition(const PageTransition& transition);
   void drawRibbon(float amount);
+  bool saveScreenshot(const Book& book,Session& session,const Session::VisiblePage& second,const std::string& directory);
   void boundaryFeedback(int direction,float amount);
   void settings(const ReadingSettings& settings,int selected);
   void message(const std::string& message);

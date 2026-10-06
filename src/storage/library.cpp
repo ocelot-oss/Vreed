@@ -12,6 +12,7 @@ void prepareStorage() {
 #ifdef VITAREADER_VITA
   if(!ensureParent(std::string(config::positions)+"/checkpoint"))throw std::runtime_error(storageFailure);
   if(!ensureParent(std::string(config::books)+"/book"))throw std::runtime_error(storageFailure);
+  if(!ensureParent(std::string(config::screenshots)+"/capture.png"))throw std::runtime_error(storageFailure);
 #else
   for(auto p:{"ux0:/data",config::data,config::books,config::positions})
     if(mkdir(p,0777)!=0&&errno!=EEXIST)throw std::runtime_error("Cannot create application directories");

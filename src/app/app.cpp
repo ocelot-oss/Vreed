@@ -129,6 +129,11 @@ void App::run() {
             books_[selected_].position=saved;
             bookmark_={!active,saved.chapter,saved.offset}; ribbon_.setVisible(!active,input.nowMs);
             audio_.emit(active?AudioEvent::BookmarkRemove:AudioEvent::BookmarkInsert); error_.clear();
+            if(!active) {
+              refreshSecond(measure); renderer_.prepareImages({&session_.page(),second_.page.get()});
+              if(!renderer_.saveScreenshot(books_[selected_],session_,second_,config::screenshots))
+                error_="Signet enregistré, capture : "+storageFailure;
+            }
           } else error_="Signet : "+storageFailure;
         } else if(input.previous||input.next) {
           requestTurn(input.next?1:-1,measure);
