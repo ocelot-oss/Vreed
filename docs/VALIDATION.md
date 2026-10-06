@@ -1,5 +1,9 @@
 # Validation gate
 
+## Audio output and justification — version 00.06
+
+[Run 37541293803](https://github.com/ocelot-oss/Vreed/actions/runs/37541293803) passed four portable suites and native Vita packaging for `35ceafdf59f437a3318eca89ac81cc6f5f45e94b`. New regressions cover stereo frame/channel fidelity, integer fades, absent sample silence, paragraph wrapping flags and exact justified right edges. The downloaded 27921576-byte VPK passed SHA-256 verification. Alternating stereo output buffers, larger blocks and file buffering address the reported output distortion; hardware listening remains necessary. See [device review](DEVICE_REVIEW_3.md).
+
 ## Supplied library music — version 00.05
 
 [Run 37540036355](https://github.com/ocelot-oss/Vreed/actions/runs/37540036355) passed all four portable suites, FFmpeg conversion and native Vita packaging for `3995e0bbe54798ed74e9da8155201c7d127229dd`. The downloaded 14452827-byte VPK passed SHA-256, ZIP integrity, SFO version/title and branding checks. Its mono 48 kHz signed 16-bit PCM recording contains 14159376 bytes (147.49 seconds), with nonzero samples and peak 29714. The source MP3 hash matches the user attachment. The worker streams, loops and fades playback without loading the entire recording into RAM. Confirm audible playback, volume/mute, opening/return fades and reader silence on Vita; host tests do not validate sound output on hardware.

@@ -28,6 +28,8 @@ Position is saved after navigation, setting changes and on return. New checkpoin
 
 ## Reading experiences
 
+Body paragraphs use justified wrapped lines; headings and final paragraph lines remain aligned left. Version 00.06 also uses buffered stereo playback for the supplied library music. See [audio and alignment review](docs/DEVICE_REVIEW_3.md).
+
 - **BOOK**: warm paper on a dark surround, restrained grain and edge shadows, running title and folios. Choose one page or an open spread with independent margins and a shaded gutter. Navigation advances by two pages in a spread, including across chapter boundaries. The right sheet is blank at an unmatched final page.
 - **CLEAN**: off-white full-screen reading, generous margins, no texture, physical gutter or ribbon.
 - **OLED NIGHT**: true-black canvas, subdued off-white text, dim progress, black settings and error surfaces.
