@@ -11,10 +11,10 @@ std::size_t pageForOffset(const std::vector<Page>& pages,std::size_t offset) {
 std::vector<Page> paginate(const Chapter& chapter,const Layout& l,const Measure& measure) {
   if(l.width<=0||l.height<l.lineHeight||l.lineHeight<=0)throw std::runtime_error("Invalid viewport");
   std::vector<Page> pages(1); int y=0; std::size_t base=0;
-  auto emit=[&](const std::string& text,float scale,std::size_t offset) {
+  auto emit=[&](const std::string& text,float scale,std::size_t offset,bool justify=false) {
     if(y+l.lineHeight>l.height) { pages.emplace_back(); y=0; }
     if(pages.back().lines.empty()&&pages.back().images.empty())pages.back().offset=offset;
-    pages.back().lines.push_back({text,y+l.lineHeight,scale,offset}); y+=l.lineHeight;
+    pages.back().lines.push_back({text,y+l.lineHeight,scale,offset,justify}); y+=l.lineHeight;
   };
   for(const auto& block:chapter.blocks) {
     if(block.image) {
@@ -35,7 +35,7 @@ std::vector<Page> paginate(const Chapter& chapter,const Layout& l,const Measure&
       const auto word=text.substr(begin,i-begin);
       auto candidate=line+(line.empty()?"":" ")+word;
       if(measure(candidate,scale)<=l.width) { if(line.empty())lineOffset=base+begin; line=std::move(candidate); continue; }
-      if(!line.empty()) { emit(line,scale,lineOffset); line.clear(); }
+      if(!line.empty()) { emit(line,scale,lineOffset,block.kind==Block::Kind::Paragraph); line.clear(); }
       for(std::size_t j=0;j<word.size();) {
         std::size_t end=j+1;
         while(end<word.size()&&(static_cast<unsigned char>(word[end])&0xc0)==0x80)++end;

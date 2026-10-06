@@ -1,6 +1,7 @@
 #include "reader/layout.hpp"
 #include "reader/settings.hpp"
 #include "rendering/page_style.hpp"
+#include "rendering/typography.hpp"
 #include <cassert>
 #include <iostream>
 using namespace vr;
@@ -16,6 +17,15 @@ int main() {
     for(unsigned char ch:line.text)if(ch>='a'&&ch<='z')letters+=char(ch);
   }
   assert(letters=="abcdefghijklmnopqrst");
+  Chapter prose; Block paragraph; paragraph.runs.push_back({"aa bb cc dd ee",false,false}); prose.blocks.push_back(paragraph);
+  auto justified=paginate(prose,l,measure);
+  assert(justified[0].lines[0].justify&&justified[0].lines[1].justify);
+  assert(!justified.back().lines.back().justify);
+  int right=0;
+  readingLine(justified[0].lines[0],73,measure,[&](int x,const std::string& word){right=x+measure(word,1);});
+  assert(right==73);
+  paragraph.kind=Block::Kind::Heading; prose.blocks={paragraph};
+  for(const auto& page:paginate(prose,l,measure))for(const auto& line:page.lines)assert(!line.justify);
   for(std::size_t i=1;i<pages.size();++i)assert(pages[i].offset>pages[i-1].offset);
   auto anchor=pages[1].offset;
   auto wider=l; wider.width=100;

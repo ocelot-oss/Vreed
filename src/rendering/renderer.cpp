@@ -134,7 +134,9 @@ void Renderer::drawPage(const Page& page,int index,Position position,std::size_t
   // Each page clips to its own rectangle; glyph bearings cannot enter the gutter.
   vita2d_set_clip_rectangle(area.x,area.y,area.x+area.width,area.y+area.height);
   vita2d_enable_clipping();
-  for(const auto& line:page.lines)text(area.x,area.y+line.y,line.text,line.scale,presentation_.theme.text);
+  for(const auto& line:page.lines)readingLine(line,area.width,
+    [&](const std::string& s,float scale){return measure(s,scale);},
+    [&](int x,const std::string& s){text(area.x+x,area.y+line.y,s,line.scale,presentation_.theme.text);});
   for(const auto& image:page.images) {
     const auto it=images_.find(image.image->key);
     if(it!=images_.end()&&it->second.texture)vita2d_draw_texture_scale(it->second.texture,area.x+(area.width-image.width)/2,area.y+image.y,float(image.width)/image.image->width,float(image.height)/image.image->height);

@@ -7,4 +7,4 @@ eboot.bin
 __pycache__/
 .tools/
 
-/assets/audio/library.pcm
+/assets/audio/library-stereo.pcm

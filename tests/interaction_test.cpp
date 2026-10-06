@@ -3,6 +3,7 @@
 #include "rendering/curl.hpp"
 #include "storage/settings.hpp"
 #include "audio/events.hpp"
+#include "audio/stereo_mixer.hpp"
 #include <cassert>
 #include <cmath>
 #include <cstdio>
@@ -13,6 +14,18 @@
 #include "rendering/typography.hpp"
 using namespace vr;
 int main(int argc,char** argv) {
+  {
+    StereoMixer mixer;
+    std::vector<std::int16_t> recording(24000),effects(12000,0),output(24000);
+    for(std::size_t i=0;i<12000;++i) { recording[i*2]=12000; recording[i*2+1]=-8000; }
+    mixer.mix(output.data(),recording.data(),recording.size(),effects.data(),12000,true,true,2);
+    assert(output[23998]==6000&&output[23999]==-4000); // Channel order and exact playback rate.
+    assert(output[0]==0&&mixer.audible());
+    mixer.mix(output.data(),recording.data(),recording.size(),effects.data(),12000,false,true,2);
+    assert(output[23998]==0&&output[23999]==0&&!mixer.audible());
+    mixer.mix(output.data(),recording.data(),0,effects.data(),12000,true,true,3);
+    for(auto sample:output)assert(sample==0); // Short/missing reads cannot reuse old PCM.
+  }
   assert(argc==2); const std::string file=argv[1];
   PageTransition motion;
   assert(motion.start(1,TransitionKind::Curl,0));

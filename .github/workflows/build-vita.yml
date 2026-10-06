@@ -23,11 +23,11 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y cmake g++ libarchive-dev libexpat1-dev ffmpeg
       - name: Prepare library music
-        run: ffmpeg -nostdin -v error -i assets/audio/library.mp3 -ac 1 -ar 48000 -f s16le assets/audio/library.pcm
+        run: ffmpeg -nostdin -v error -i assets/audio/library.mp3 -ac 2 -ar 48000 -f s16le assets/audio/library-stereo.pcm
       - uses: actions/upload-artifact@v4
         with:
           name: Library-PCM
-          path: assets/audio/library.pcm
+          path: assets/audio/library-stereo.pcm
       - name: Configure and build tests
         run: |
           cmake -S . -B build-host -DVITAREADER_HOST_TESTS=ON -DCMAKE_BUILD_TYPE=Release
