@@ -36,7 +36,9 @@ Body paragraphs use justified wrapped lines; headings and final paragraph lines 
 
 Triangle opens an overlay for mode, BOOK layout, font size, line spacing, margins, animation, page sound and volume. Large type falls back to one page rather than shrinking the text to force a spread. The requested layout is restored when choosing a smaller font. Settings persist across launches in `ux0:/data/VitaReader/settings.cfg`; malformed files use safe defaults.
 
-Square pulls the BOOK ribbon and saves an explicit resume point, confirmed by a short chime only after successful storage. That point survives further navigation and application restarts. Square on the marked page retracts it and restores automatic resume; Square elsewhere moves it to the current page. Each sheet keeps a visible retracted tip. In a spread, Square marks the left page.
+Square pulls the BOOK ribbon and saves an explicit resume point, confirmed by a short chime only after successful storage. That point survives further navigation and application restarts. Square on the marked page retracts it and restores automatic resume; Square elsewhere moves it to the current page. The single ribbon keeps a visible retracted tip. In a spread, Square marks the left page.
+
+From 00.07, only the right-hand ribbon appears in a spread. Pulling the ribbon also saves a clean 960×544 PNG of the current reading view (both pages in spread mode) into `ux0:/data/Vreed/screenshots/`, created automatically. Files include a book identifier, chapter, page, timestamp and collision counter; repeated captures preserve previous images. Retracting the ribbon retains captures. A screenshot failure reports an error while retaining a successfully saved resume point.
 
 BOOK defaults to a 360 ms perceptual page curl; CLEAN and OLED NIGHT use a 160 ms slide. Choose NONE for instant turns. All modes support front-touch drags starting anywhere on the page: drag horizontally and release to complete or return. Spread turns advance two pages. Rapid physical presses finish the accepted turn before starting the next; cancelled drags never change the saved position.
 

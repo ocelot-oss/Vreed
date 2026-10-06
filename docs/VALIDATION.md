@@ -1,5 +1,9 @@
 # Validation gate
 
+## Light library and bookmark PNGs — version 00.07
+
+[Run 37542439753](https://github.com/ocelot-oss/Vreed/actions/runs/37542439753) passed four portable suites and native Vita packaging for `26ed806aae0d86522384dfab6b6800e46cf9948d`. The downloaded 27925752-byte VPK passed SHA-256 verification. Native compilation validates the cropped mascot drawing and simplified libpng memory-write API. Device checks still need to confirm background contrast, right-only ribbon rendering, PNG orientation/content/storage and capture latency; no native screenshot or measured capture performance is claimed. See [device review](DEVICE_REVIEW_4.md).
+
 ## Audio output and justification — version 00.06
 
 [Run 37541293803](https://github.com/ocelot-oss/Vreed/actions/runs/37541293803) passed four portable suites and native Vita packaging for `35ceafdf59f437a3318eca89ac81cc6f5f45e94b`. New regressions cover stereo frame/channel fidelity, integer fades, absent sample silence, paragraph wrapping flags and exact justified right edges. The downloaded 27921576-byte VPK passed SHA-256 verification. Alternating stereo output buffers, larger blocks and file buffering address the reported output distortion; hardware listening remains necessary. See [device review](DEVICE_REVIEW_3.md).
