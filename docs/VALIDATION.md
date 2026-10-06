@@ -1,5 +1,9 @@
 # Validation gate
 
+## Vreed branding — version 00.03
+
+[Run 37536589446](https://github.com/ocelot-oss/Vreed/actions/runs/37536589446) passed all four portable suites and native package generation for `8819192163594ab912b0bca6dfd49dc0d5f9612d`. The 1449653-byte `Vreed.vpk` passed SHA-256 and ZIP integrity checks. Its SFO title is `Vreed`, version `00.03`, and retained title ID `VITARD001`. Packaged icon, LiveArea background/startup/template and library logo were verified against the source assets; icon is indexed PNG at 128×128. The supplied original logo is preserved as `assets/branding/source.png`; display name/version originate in `config/identity.cmake`. Books/settings/positions keep their legacy paths. Bubble/LiveArea appearance and update behavior still require Vita review.
+
 ## First device-review update — version 00.02
 
 The user reported satisfactory page audio, animations and reading fluidity for version 00.01, alongside checkpoint errors, missing images, apostrophe spacing and inconsistent touch. Version 00.02 addresses those reports and adds the requested startup music, shelf library and explicit resume bookmark; see [change notes](DEVICE_REVIEW_1.md).
