@@ -1,5 +1,11 @@
 # Validation gate
 
+## First device-review update — version 00.02
+
+The user reported satisfactory page audio, animations and reading fluidity for version 00.01, alongside checkpoint errors, missing images, apostrophe spacing and inconsistent touch. Version 00.02 addresses those reports and adds the requested startup music, shelf library and explicit resume bookmark; see [change notes](DEVICE_REVIEW_1.md).
+
+[Run 37526595831](https://github.com/ocelot-oss/Vreed/actions/runs/37526595831) passed all four portable suites and native VitaSDK build/package generation for `5b09869e06a335145c247bf95bf2e12d6a58dc0e`. New regression cases cover repeated VR3 checkpoint overwrites/pinned-state round trips, music start/stop, CLEAN touch edges, relative PNG resources, fitted image geometry and elisions across styled runs/nonbreaking whitespace. The downloaded 1130927-byte VPK matched its SHA-256. Toolchain remains release 2026.08, ARM GCC 15.2.0 and CMake 3.28.3. The new native file backend, image output, shelf visuals, ribbon resume behavior and touch changes still require the user's device review.
+
 ## GitHub Actions results — 2026-10-06
 
 [Run 37448672300](https://github.com/ocelot-oss/Vreed/actions/runs/37448672300) succeeded for commit `f6e738f4eb61467d3a578a921e5358936f18e16a`. All four portable suites (layout, session, interaction, real EPUB) executed successfully on Ubuntu. Native compilation, linking, SELF and VPK generation succeeded with VitaSDK release 2026.08, sequence 3, toolchain `sdk-core-2026.08.0`, package snapshot `packages-2026.08-snapshot-20260813.3.1`, ARM GCC 15.2.0 and CMake 3.28.3.
