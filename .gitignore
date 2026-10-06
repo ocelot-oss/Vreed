@@ -1,0 +1,8 @@
+build/
+build-host/
+*.vpk
+*.elf
+*.self
+eboot.bin
+__pycache__/
+.tools/

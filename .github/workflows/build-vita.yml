@@ -1,0 +1,65 @@
+name: Build VitaReader
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  core-tests:
+    name: Portable tests
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Install host dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake g++ libarchive-dev libexpat1-dev
+      - name: Configure and build tests
+        run: |
+          cmake -S . -B build-host -DVITAREADER_HOST_TESTS=ON -DCMAKE_BUILD_TYPE=Release
+          cmake --build build-host --target layout_test session_test interaction_test epub_test --parallel 2
+      - name: Run tests
+        run: ctest --test-dir build-host --output-on-failure
+
+  vita-build:
+    name: Vita VPK
+    needs: core-tests
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    container:
+      image: vitasdk/vitasdk:2026.08-20260815
+      options: --user root
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Record SDK version
+        run: |
+          arm-vita-eabi-g++ --version
+          cmake --version
+          vdpm status
+      - name: Configure Vita release
+        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+      - name: Build VPK
+        run: cmake --build build --parallel 2
+      - name: Check package
+        run: |
+          test -s build/VitaReader.vpk
+          sha256sum build/VitaReader.vpk > build/VitaReader.vpk.sha256
+      - name: Downloadable VPK
+        uses: actions/upload-artifact@v4
+        with:
+          name: VitaReader-VPK
+          path: |
+            build/VitaReader.vpk
+            build/VitaReader.vpk.sha256
+          if-no-files-found: error
+          retention-days: 14
