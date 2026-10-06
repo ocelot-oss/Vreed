@@ -1,5 +1,9 @@
 # Validation gate
 
+## Second device review — version 00.04
+
+[Run 37538327111](https://github.com/ocelot-oss/Vreed/actions/runs/37538327111) passed all four portable suites and native Vita packaging for `e077be1cdb1eeae60c9ff1e5439f2ea08d59d2b1`. The downloaded 1460881-byte VPK passed SHA-256, ZIP integrity, SFO version/title and branding asset verification. Changes cover center-start swipes, consistent apostrophe advance, extended SELF permissions and storage diagnostics, and shelf-opening animation. These build/test results do not establish resolution on hardware; see [device checks](DEVICE_REVIEW_2.md).
+
 ## Vreed branding — version 00.03
 
 [Run 37536589446](https://github.com/ocelot-oss/Vreed/actions/runs/37536589446) passed all four portable suites and native package generation for `8819192163594ab912b0bca6dfd49dc0d5f9612d`. The 1449653-byte `Vreed.vpk` passed SHA-256 and ZIP integrity checks. Its SFO title is `Vreed`, version `00.03`, and retained title ID `VITARD001`. Packaged icon, LiveArea background/startup/template and library logo were verified against the source assets; icon is indexed PNG at 128×128. The supplied original logo is preserved as `assets/branding/source.png`; display name/version originate in `config/identity.cmake`. Books/settings/positions keep their legacy paths. Bubble/LiveArea appearance and update behavior still require Vita review.
