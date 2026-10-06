@@ -89,7 +89,7 @@ void Renderer::library(const std::vector<Book>& books,std::size_t selected) {
     for(int line=0;line<5;++line)vita2d_draw_rectangle(32,y+4+line*2,896,1,RGBA8(43,28,18,25));
   }
   if(books.empty()) { text(42,210,"Ajoutez vos fichiers EPUB dans :",1.2f); text(42,252,"ux0:/data/VitaReader/books",1.1f); }
-  const unsigned colors[]={RGBA8(77,109,103,255),RGBA8(139,72,59,255),RGBA8(119,97,142,255),RGBA8(154,121,61,255),RGBA8(61,86,121,255),RGBA8(114,91,76,255)};
+  const unsigned colors[]={RGBA8(77,109,103,255u),RGBA8(139,72,59,255u),RGBA8(119,97,142,255u),RGBA8(154,121,61,255u),RGBA8(61,86,121,255u),RGBA8(114,91,76,255u)};
   auto first=(selected/20)*20;
   for(std::size_t i=first;i<books.size()&&i<first+20;++i) {
     const int slot=int(i-first),row=slot/10,x=48+(slot%10)*87,h=148+int((i*17)%35),bottom=260+row*208,y=bottom-h;

@@ -14,12 +14,16 @@ inline std::shared_ptr<const ImageData> imageData(std::string key,std::string by
     image->width=int(w); image->height=int(h); image->png=true;
   } else if(n>=4&&p[0]==255&&p[1]==216) {
     for(std::size_t i=2;i+4<n;) {
-      if(p[i++]!=255)return {}; while(i<n&&p[i]==255)++i; if(i>=n)return {};
+      if(p[i++]!=255)return {};
+      while(i<n&&p[i]==255)++i;
+      if(i>=n)return {};
       const auto marker=p[i++]; if(marker==217||marker==218)break;
       if(marker==1||(marker>=208&&marker<=215))continue;
-      if(i+2>n)return {}; const auto size=be16(i); if(size<2||i+size>n)return {};
+      if(i+2>n)return {};
+      const auto size=be16(i); if(size<2||i+size>n)return {};
       if((marker>=192&&marker<=195)||(marker>=197&&marker<=199)||(marker>=201&&marker<=203)||(marker>=205&&marker<=207)) {
-        if(size<8)return {}; image->height=be16(i+3); image->width=be16(i+5); break;
+        if(size<8)return {};
+        image->height=be16(i+3); image->width=be16(i+5); break;
       }
       i+=size;
     }
