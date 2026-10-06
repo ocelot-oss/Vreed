@@ -60,6 +60,13 @@ target_link_libraries(VitaReader vita2d freetype png jpeg archive expat bz2 zstd
   SceDisplay_stub SceGxm_stub SceSysmodule_stub SceCtrl_stub ScePgf_stub
   ScePvf_stub SceCommonDialog_stub SceAppMgr_stub SceLibKernel_stub SceTouch_stub SceAudio_stub SceIofilemgr_stub)
 include(config/identity.cmake)
+configure_file(config/identity.hpp.in generated/app/identity.hpp @ONLY)
+target_include_directories(VitaReader PRIVATE "${CMAKE_CURRENT_BINARY_DIR}/generated")
 vita_create_self(eboot.bin VitaReader)
-vita_create_vpk(VitaReader.vpk ${VITAREADER_TITLE_ID} eboot.bin
-  VERSION ${VITAREADER_VERSION} NAME ${VITAREADER_NAME})
+vita_create_vpk(${VITAREADER_NAME}.vpk ${VITAREADER_TITLE_ID} eboot.bin
+  VERSION ${VITAREADER_VERSION} NAME ${VITAREADER_NAME}
+  FILE assets/branding/icon0.png sce_sys/icon0.png
+  FILE assets/branding/bg.png sce_sys/livearea/contents/bg.png
+  FILE assets/branding/startup.png sce_sys/livearea/contents/startup.png
+  FILE assets/branding/template.xml sce_sys/livearea/contents/template.xml
+  FILE assets/branding/logo.png assets/branding/logo.png)

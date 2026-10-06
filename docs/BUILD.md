@@ -5,8 +5,8 @@
 The workflow `.github/workflows/build-vita.yml` first runs all four portable suites on Ubuntu, including real libarchive/Expat integration. It then builds the native release in the full official VitaSDK image `vitasdk/vitasdk:2026.08-20260815`. The dated image tag fixes the SDK image rather than following `latest`.
 
 1. Create a GitHub repository (private is fine), and push this project to its `main` branch. `.tools/` is excluded; do not upload downloaded SDKs or PowerShell.
-2. Open **Actions → Build VitaReader**. A push to `main` starts it automatically; **Run workflow** starts it manually once the workflow is on the default branch.
-3. After both jobs succeed, open the run and download **Artifacts → VitaReader-VPK**. Extract the downloaded ZIP to get `VitaReader.vpk` and its SHA-256 checksum.
+2. Open **Actions → Build Vreed**. A push to `main` starts it automatically; **Run workflow** starts it manually once the workflow is on the default branch.
+3. After both jobs succeed, open the run and download **Artifacts → Vreed-VPK**. Extract the downloaded ZIP to get `Vreed.vpk` and its SHA-256 checksum.
 4. Copy the VPK to the Vita and install it with VitaShell.
 
 No secrets are required. The workflow only has read access to repository contents and does not publish a GitHub Release. If a job fails, open its failing step to inspect the compiler output. The first remote run passed on 2026-10-06, including all four tests and native VPK generation. A successful build does not establish hardware performance.
@@ -26,11 +26,11 @@ cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
 cmake --build build -j2
 ```
 
-Expected artifact: `build/VitaReader.vpk`. Application identity is centralized in `config/identity.cmake`; storage paths and limits are in `src/app/config.hpp`.
+Expected artifact: `build/Vreed.vpk`. Application identity is centralized in `config/identity.cmake`; storage paths and limits are in `src/app/config.hpp`.
 
 Install the VPK with VitaShell on a homebrew-enabled Vita. Generate the original sample with `python tools/make_sample.py`, then copy `assets/VitaReader-test.epub` to `ux0:/data/VitaReader/books/` using VitaShell USB or FTP. Launch VitaReader and open it with Cross.
 
-No custom LiveArea assets are included yet; the package uses the tooling's default presentation. Verify installation behavior with the installed version of VitaSDK.
+Custom icon and LiveArea assets use the user's supplied logo, stored in `assets/branding`. The original source is preserved alongside package-sized PNGs. Verify the bubble and LiveArea on hardware after updating.
 
 ## Host checks
 

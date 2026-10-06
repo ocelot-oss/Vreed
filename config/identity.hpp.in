@@ -1,0 +1,5 @@
+#pragma once
+namespace vr::config {
+constexpr const char* name="@VITAREADER_NAME@";
+constexpr const char* version="@VITAREADER_VERSION@";
+}

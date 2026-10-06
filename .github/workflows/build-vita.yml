@@ -1,4 +1,4 @@
-name: Build VitaReader
+name: Build Vreed
 
 on:
   workflow_dispatch:
@@ -52,14 +52,14 @@ jobs:
         run: cmake --build build --parallel 2
       - name: Check package
         run: |
-          test -s build/VitaReader.vpk
-          sha256sum build/VitaReader.vpk > build/VitaReader.vpk.sha256
+          test -s build/Vreed.vpk
+          sha256sum build/Vreed.vpk > build/Vreed.vpk.sha256
       - name: Downloadable VPK
         uses: actions/upload-artifact@v4
         with:
-          name: VitaReader-VPK
+          name: Vreed-VPK
           path: |
-            build/VitaReader.vpk
-            build/VitaReader.vpk.sha256
+            build/Vreed.vpk
+            build/Vreed.vpk.sha256
           if-no-files-found: error
           retention-days: 14

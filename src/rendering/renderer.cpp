@@ -1,4 +1,5 @@
 #include "rendering/renderer.hpp"
+#include "app/identity.hpp"
 #include <stdexcept>
 #include <algorithm>
 #include <cmath>
@@ -12,10 +13,13 @@ Renderer::Renderer() {
   if(vita2d_init()<0) { sceSysmoduleUnloadModule(SCE_SYSMODULE_PGF); throw std::runtime_error("Graphics initialization failed"); }
   font_=vita2d_load_default_pgf();
   if(!font_) { vita2d_fini(); sceSysmoduleUnloadModule(SCE_SYSMODULE_PGF); throw std::runtime_error("System font unavailable"); }
+  logo_=vita2d_load_PNG_file("app0:/assets/branding/logo.png");
+  if(logo_) { logo_->gxm_rtgt=nullptr; logo_->depth_UID=0; vita2d_texture_set_filters(logo_,SCE_GXM_TEXTURE_FILTER_LINEAR,SCE_GXM_TEXTURE_FILTER_LINEAR); }
 }
 Renderer::~Renderer() {
   vita2d_wait_rendering_done();
   clearImages();
+  if(logo_)vita2d_free_texture(logo_);
   if(source_)vita2d_free_texture(source_);
   if(destination_)vita2d_free_texture(destination_);
   vita2d_free_pgf(font_); vita2d_fini(); sceSysmoduleUnloadModule(SCE_SYSMODULE_PGF);
@@ -86,7 +90,8 @@ void Renderer::begin(bool reading) { reading_=reading; vita2d_set_clear_color(re
 void Renderer::finish() { vita2d_end_drawing(); vita2d_swap_buffers(); }
 void Renderer::library(const std::vector<Book>& books,std::size_t selected) {
   vita2d_draw_rectangle(0,0,960,544,RGBA8(24,21,21,255));
-  text(42,48,"Ma bibliothèque",1.65f,RGBA8(239,223,190,255)); text(42,80,std::to_string(books.size())+" livres · choisissez une tranche",0.85f,RGBA8(164,151,132,255));
+  if(logo_)vita2d_draw_texture_scale(logo_,42,8,80.0f/vita2d_texture_get_width(logo_),80.0f/vita2d_texture_get_height(logo_));
+  text(140,48,config::name,1.65f,RGBA8(239,223,190,255)); text(140,80,"Bibliothèque · "+std::to_string(books.size())+" livres",0.85f,RGBA8(164,151,132,255));
   for(int row=0;row<2;++row) {
     const int y=260+row*208;
     vita2d_draw_rectangle(28,y+14,904,14,RGBA8(0,0,0,90));

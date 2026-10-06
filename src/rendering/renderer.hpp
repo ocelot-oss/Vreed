@@ -33,6 +33,7 @@ private:
   std::map<std::string,ImageTexture> images_;
   void clearImages();
   vita2d_pgf* font_=nullptr;
+  vita2d_texture* logo_=nullptr;
   Presentation presentation_{};
   bool reading_=false;
   std::vector<PaintRect> paper_,ribbon_;
