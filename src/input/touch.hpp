@@ -11,4 +11,11 @@ public:
 private: int id_=-1; float x_=0,y_=0; bool blocked_=false;
 };
 int pageEdge(const Presentation& p,const TouchPoint& touch);
+class SwipeGesture {
+public:
+  int update(const TouchPoint& point);
+  const TouchPoint& start() const { return start_; }
+  bool pending() const { return pending_; }
+private: TouchPoint start_; bool pending_=false;
+};
 }

@@ -1,5 +1,6 @@
 #include "storage/library.hpp"
 #include "app/config.hpp"
+#include "storage/file.hpp"
 #include <dirent.h>
 #include <sys/stat.h>
 #include <algorithm>
@@ -8,8 +9,13 @@
 #include <stdexcept>
 namespace vr {
 void prepareStorage() {
+#ifdef VITAREADER_VITA
+  if(!ensureParent(std::string(config::positions)+"/checkpoint"))throw std::runtime_error(storageFailure);
+  if(!ensureParent(std::string(config::books)+"/book"))throw std::runtime_error(storageFailure);
+#else
   for(auto p:{"ux0:/data",config::data,config::books,config::positions})
     if(mkdir(p,0777)!=0&&errno!=EEXIST)throw std::runtime_error("Cannot create application directories");
+#endif
 }
 std::vector<Book> discover(const std::string& directory) {
   DIR* dir=opendir(directory.c_str()); if(!dir)throw std::runtime_error("Cannot scan books directory");

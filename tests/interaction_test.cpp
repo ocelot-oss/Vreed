@@ -10,6 +10,7 @@
 #include <iostream>
 #include <algorithm>
 #include <filesystem>
+#include "rendering/typography.hpp"
 using namespace vr;
 int main(int argc,char** argv) {
   assert(argc==2); const std::string file=argv[1];
@@ -108,6 +109,23 @@ int main(int argc,char** argv) {
   settings.mode=ReadingMode::Clean; view=presentation(settings,[](float s){return int(s*20);});
   assert(pageEdge(view,{TouchPhase::Down,1,950,300})==1);
   assert(pageEdge(view,{TouchPhase::Down,1,4,300})==-1);
+  SwipeGesture swipe;
+  for(int i=0;i<20;++i) {
+    const float start=180+i*25;
+    assert(swipe.update({TouchPhase::Down,1,start,250})==0);
+    assert(swipe.update({TouchPhase::Move,1,start-30,251})==1);
+    assert(swipe.start().x==start);
+    swipe.update({TouchPhase::Up,1,start-200,251});
+    swipe.update({TouchPhase::Down,1,start,250});
+    assert(swipe.update({TouchPhase::Move,1,start+30,249})==-1);
+    swipe.update({TouchPhase::Cancel,1,start,250});
+  }
+  swipe.update({TouchPhase::Down,1,400,250}); assert(!swipe.update({TouchPhase::Move,1,402,300})&&!swipe.pending());
+  const auto raw=[](const std::string& s,float){return s=="'"?40:int(s.size())*10;};
+  std::vector<int> glyphPositions;
+  const auto width=textAdvance("L’homme",1,raw,[&](int x,const std::string&){glyphPositions.push_back(x);});
+  assert(width==64&&glyphPositions.size()==3&&glyphPositions[0]==0&&glyphPositions[1]==10&&glyphPositions[2]==14);
+  assert(latinPunctuation("l’homme, dʼabord, ＇oui＇")=="l'homme, d'abord, 'oui'");
 
   auto measure=[](const std::string& s,float){return int(s.size())*10;};
   Layout layout; layout.width=60; layout.height=20; layout.lineHeight=20;

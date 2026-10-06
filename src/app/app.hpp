@@ -9,10 +9,12 @@ namespace vr {
 class App {
 public: void run();
 private:
-  enum class State { Library,Reader }; State state_=State::Library;
+  enum class State { Library,Opening,Reader }; State state_=State::Library;
+  double openingStarted_=0;
   Vita platform_; Renderer renderer_; Session session_;
   VitaAudio audio_;
   ReaderTurn turn_;
+  SwipeGesture swipe_;
   RibbonMotion ribbon_;
   EdgeFeedback feedback_;
   FrameStats frameStats_;

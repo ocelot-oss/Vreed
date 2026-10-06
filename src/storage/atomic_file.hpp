@@ -1,6 +1,7 @@
 #pragma once
 #include <cstdio>
 #include <string>
+#include "storage/file.hpp"
 #ifdef VITAREADER_VITA
 #include <psp2/io/fcntl.h>
 #endif
@@ -16,9 +17,11 @@ inline bool replaceFile(const std::string& temporary,const std::string& destinat
   if(sceIoRename(temporary.c_str(),destination.c_str())>=0)return true;
   const auto backup=destination+".bak";
   sceIoRemove(backup.c_str());
-  if(sceIoRename(destination.c_str(),backup.c_str())<0)return false;
-  if(sceIoRename(temporary.c_str(),destination.c_str())<0) {
-    sceIoRename(backup.c_str(),destination.c_str()); return false;
+  const int moved=sceIoRename(destination.c_str(),backup.c_str());
+  if(moved<0)return fileFailure("backup",destination,moved);
+  const int installed=sceIoRename(temporary.c_str(),destination.c_str());
+  if(installed<0) {
+    sceIoRename(backup.c_str(),destination.c_str()); return fileFailure("rename",destination,installed);
   }
   sceIoRemove(backup.c_str()); return true;
 #elif defined(_WIN32)

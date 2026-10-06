@@ -19,6 +19,8 @@ public:
   void configure(const Presentation& presentation);
   void begin(bool reading); void finish();
   void library(const std::vector<Book>& books,std::size_t selected);
+  bool captureOpening(const std::vector<Book>& books,std::size_t selected,Session& session,const Session::VisiblePage& second);
+  void opening(float progress,std::size_t selected);
   void reader(const Book& book,const Page& page,Position position,std::size_t pageCount,
               std::size_t chapters,const Session::VisiblePage& second,float ribbon=0);
   bool captureTurn(const Book& book,Session& current,const Session::VisiblePage& currentSecond,
@@ -40,6 +42,8 @@ private:
   vita2d_texture* source_=nullptr;
   vita2d_texture* destination_=nullptr;
   bool surfacesFailed_=false;
+  std::string openingTitle_;
+  unsigned openingCover_=0xff5f674c;
   bool ensureSurfaces();
   void capture(vita2d_texture* target,const Book& book,Session& session,const Session::VisiblePage& second);
   void paint(const std::vector<PaintRect>& rectangles);

@@ -1,6 +1,7 @@
 #include "app/app.hpp"
 #include "app/config.hpp"
 #include "storage/settings.hpp"
+#include "storage/file.hpp"
 #include <exception>
 #include <cstdio>
 namespace vr {
@@ -16,7 +17,7 @@ void App::changeSetting(int direction,const Measure& measure) {
   }
   settings_=candidate; audio_.settings(settings_.pageSound,settings_.soundVolume);
   error_.clear(); if(settingRow_<5)checkpoint();
-  if(!saveSettings(config::settings,settings_))error_="Impossible de sauvegarder les réglages";
+  if(!saveSettings(config::settings,settings_))error_="Réglages : "+storageFailure;
 }
 void App::refreshSecond(const Measure& measure) {
   if(!refreshPages_)return;
@@ -60,11 +61,14 @@ void App::checkpoint() {
   if(books_[selected_].position.resumePinned)return;
   books_[selected_].position=session_.position;
   books_[selected_].position.resumePinned=false;
-  if(!savePosition(books_[selected_].path,session_.position))error_="Impossible de sauvegarder la position";
+  if(!savePosition(books_[selected_].path,books_[selected_].position))error_="Position : "+storageFailure;
 }
 void App::run() {
   try {
-    prepareStorage(); settings_=loadSettings(config::settings); audio_.settings(settings_.pageSound,settings_.soundVolume);
+    prepareStorage();
+  } catch(const std::exception& e) { error_="Stockage : "+std::string(e.what()); }
+  try {
+    settings_=loadSettings(config::settings); audio_.settings(settings_.pageSound,settings_.soundVolume);
     books_=discover(config::books); audio_.emit(AudioEvent::StartupMusic);
   } catch(const std::exception& e) { error_=e.what(); }
   auto measure=[&](const std::string& s,float scale){return renderer_.measure(s,scale);};
@@ -77,7 +81,11 @@ void App::run() {
     }
     lastFrame_=input.nowMs;
     try {
-      if(state_==State::Library) {
+      if(state_==State::Opening) {
+        if(input.quit)running=false;
+        if(input.back)state_=State::Library;
+        else if(input.nowMs-openingStarted_>=650)state_=State::Reader;
+      } else if(state_==State::Library) {
         if(input.quit)running=false;
         if((input.up||input.previous)&&selected_>0)--selected_;
         if((input.down||input.next)&&selected_+1<books_.size())++selected_;
@@ -99,7 +107,9 @@ void App::run() {
           const auto saved=books_[selected_].position;
           bookmark_={saved.resumePinned,saved.chapter,saved.offset}; ribbon_.setVisible(bookmarked(),input.nowMs,true);
           audio_.emit(AudioEvent::StopMusic);
-          refreshPages_=true; error_.clear();
+          refreshPages_=true; refreshSecond(measure); renderer_.prepareImages({&session_.page(),second_.page.get()});
+          if(renderer_.captureOpening(books_,selected_,session_,second_)) { state_=State::Opening; openingStarted_=platform_.nowMs(); }
+          error_.clear();
         }
       } else {
         turnEvents(turn_.tick(input.nowMs),input.nowMs);
@@ -119,14 +129,13 @@ void App::run() {
             books_[selected_].position=saved;
             bookmark_={!active,saved.chapter,saved.offset}; ribbon_.setVisible(!active,input.nowMs);
             audio_.emit(active?AudioEvent::BookmarkRemove:AudioEvent::BookmarkInsert); error_.clear();
-          } else error_="Impossible de sauvegarder le marque-page";
+          } else error_="Signet : "+storageFailure;
         } else if(input.previous||input.next) {
           requestTurn(input.next?1:-1,measure);
         } else {
-          if(input.touch.phase==TouchPhase::Down) {
-            const auto direction=pageEdge(presentation_,input.touch);
-            if(direction)requestTurn(direction,measure,&input.touch);
-          } else if(input.touch.phase==TouchPhase::Move)turn_.motion().drag(input.touch.x,input.nowMs);
+          const auto direction=swipe_.update(input.touch);
+          if(direction) { requestTurn(direction,measure,&swipe_.start()); turn_.motion().drag(input.touch.x,platform_.nowMs()); }
+          else if(input.touch.phase==TouchPhase::Move)turn_.motion().drag(input.touch.x,input.nowMs);
           else if(input.touch.phase==TouchPhase::Up)turn_.motion().release(input.nowMs);
           else if(input.touch.phase==TouchPhase::Cancel&&turn_.motion().state()==TurnState::Dragging)turn_.motion().cancel(input.nowMs);
         }
@@ -139,8 +148,9 @@ void App::run() {
       if(changed)renderer_.prepareImages({&session_.page(),second_.page.get()});
       ribbon_.setVisible(bookmarked()&&settings_.mode==ReadingMode::Book,renderNow); ribbon_.tick(renderNow);
     }
-    renderer_.begin(state_==State::Reader);
+    renderer_.begin(state_!=State::Library);
     if(state_==State::Library)renderer_.library(books_,selected_);
+    else if(state_==State::Opening)renderer_.opening(float((renderNow-openingStarted_)/650),selected_);
     else {
       if(turn_.motion().active()&&turn_.motion().kind()!=TransitionKind::None) {
         renderer_.transition(turn_.motion()); renderer_.drawRibbon(ribbon_.amount());

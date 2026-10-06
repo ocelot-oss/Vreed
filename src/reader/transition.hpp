@@ -5,7 +5,7 @@ enum class TransitionKind { None, Slide, Curl };
 enum class TurnState { Idle, Dragging, Completing, Cancelling };
 namespace interaction {
 constexpr float curlMs=360,slideMs=160,settleMinMs=90;
-constexpr float releaseThreshold=0.35f,flickPagesPerSecond=0.9f,minFlickProgress=0.06f;
+constexpr float releaseThreshold=0.22f,flickPagesPerSecond=0.45f,minFlickProgress=0.06f;
 constexpr float velocityFreshMs=80,soundProgress=0.52f,edgeZone=48;
 constexpr float ribbonMs=220,boundaryMs=160,pauseGapMs=250;
 constexpr int curlSegments=16,shadowBands=8;

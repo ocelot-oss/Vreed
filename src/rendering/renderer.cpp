@@ -1,5 +1,6 @@
 #include "rendering/renderer.hpp"
 #include "app/identity.hpp"
+#include "rendering/typography.hpp"
 #include <stdexcept>
 #include <algorithm>
 #include <cmath>
@@ -80,8 +81,12 @@ void Renderer::configure(const Presentation& p) {
 void Renderer::paint(const std::vector<PaintRect>& rectangles) {
   for(const auto& rect:rectangles)vita2d_draw_rectangle(rect.bounds.x,rect.bounds.y,rect.bounds.width,rect.bounds.height,rect.color);
 }
-int Renderer::measure(const std::string& s,float scale) const { return vita2d_pgf_text_width(font_,scale,s.c_str()); }
-void Renderer::text(int x,int y,const std::string& s,float scale,unsigned color) { vita2d_pgf_draw_text(font_,x,y,color,scale,s.c_str()); }
+int Renderer::measure(const std::string& s,float scale) const {
+  return textAdvance(s,scale,[&](const std::string& piece,float size){return vita2d_pgf_text_width(font_,size,piece.c_str());},[](int,const std::string&){});
+}
+void Renderer::text(int x,int y,const std::string& s,float scale,unsigned color) {
+  textAdvance(s,scale,[&](const std::string& piece,float size){return vita2d_pgf_text_width(font_,size,piece.c_str());},[&](int offset,const std::string& piece){vita2d_pgf_draw_text(font_,x+offset,y,color,scale,piece.c_str());});
+}
 std::string Renderer::fit(const std::string& s,int width,float scale) const {
   if(measure(s,scale)<=width)return s; std::string out=s;
   while(!out.empty()&&measure(out+"...",scale)>width) { auto i=out.size()-1; while(i>0&&(static_cast<unsigned char>(out[i])&0xc0)==0x80)--i; out.resize(i); } return out+"...";
@@ -143,6 +148,36 @@ void Renderer::drawPage(const Page& page,int index,Position position,std::size_t
   const int width=measure(label,0.8f);
   const int x=presentation_.pageCount==2?(index==0?area.x:area.x+area.width-width):(960-width)/2;
   text(x,presentation_.theme.physical?paper.y+paper.height-24:510,label,0.8f,presentation_.theme.secondary);
+}
+bool Renderer::captureOpening(const std::vector<Book>& books,std::size_t selected,Session& session,const Session::VisiblePage& second) {
+  vita2d_wait_rendering_done(); if(!ensureSurfaces())return false;
+  openingTitle_=books[selected].title;
+  unsigned seed=2166136261u; for(unsigned char c:openingTitle_)seed=(seed^c)*16777619u;
+  const unsigned palette[]={RGBA8(77,109,103,255u),RGBA8(139,72,59,255u),RGBA8(119,97,142,255u),RGBA8(154,121,61,255u),RGBA8(61,86,121,255u),RGBA8(114,91,76,255u)};
+  openingCover_=palette[seed%6];
+  vita2d_start_drawing_advanced(source_,0); vita2d_set_clear_color(RGBA8(24,21,21,255)); vita2d_clear_screen();
+  library(books,selected); vita2d_end_drawing(); vita2d_wait_rendering_done();
+  capture(destination_,books[selected],session,second); return true;
+}
+void Renderer::opening(float progress,std::size_t selected) {
+  const float t=std::clamp(progress,0.0f,1.0f);
+  vita2d_draw_texture(source_,0,0);
+  const int slot=int(selected%20),row=slot/10;
+  const float sx=48+(slot%10)*87,sh=148+int((selected*17)%35),sy=260+row*208-sh;
+  const float lift=smoothStep(std::min(1.0f,t/0.4f)),unfold=smoothStep(std::max(0.0f,(t-0.25f)/0.75f));
+  const auto left=presentation_.paper[0],right=presentation_.paper[presentation_.pageCount-1];
+  const float width=right.x+right.width-left.x,height=left.height;
+  const float x=sx+(left.x-sx)*lift,y=sy+(left.y-sy)*lift,w=74+(width-74)*lift,h=sh+(height-sh)*lift;
+  vita2d_draw_rectangle(0,0,960,544,RGBA8(0,0,0,int(170*unfold)));
+  vita2d_draw_rectangle(x+7,y+10,w,h,RGBA8(0,0,0,int(90*(1-t))));
+  vita2d_set_clip_rectangle(int(x),int(y),int(x+w),int(y+h)); vita2d_enable_clipping();
+  vita2d_draw_texture(destination_,0,0); vita2d_disable_clipping();
+  const float cover=w*(1-unfold);
+  vita2d_draw_rectangle(x,y,cover,h,openingCover_);
+  vita2d_draw_rectangle(x+3,y,2,h,RGBA8(224,208,164,int(120*(1-unfold))));
+  if(cover>55)text(int(x+12),int(y+45),fit(openingTitle_,int(cover)-24,0.85f),0.85f,RGBA8(245,229,197,255));
+  if(cover>1)vita2d_draw_rectangle(x+cover,y,6,h,RGBA8(0,0,0,int(80*(1-unfold))));
+  if(t>0.75f)vita2d_draw_texture_tint(destination_,0,0,RGBA8(255,255,255,int(smoothStep((t-0.75f)/0.25f)*255)));
 }
 void Renderer::reader(const Book& book,const Page& page,Position p,std::size_t count,std::size_t chapters,const Session::VisiblePage& second,float ribbon) {
   paint(paper_);

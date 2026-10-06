@@ -62,7 +62,7 @@ target_link_libraries(VitaReader vita2d freetype png jpeg archive expat bz2 zstd
 include(config/identity.cmake)
 configure_file(config/identity.hpp.in generated/app/identity.hpp @ONLY)
 target_include_directories(VitaReader PRIVATE "${CMAKE_CURRENT_BINARY_DIR}/generated")
-vita_create_self(eboot.bin VitaReader)
+vita_create_self(eboot.bin VitaReader UNSAFE)
 vita_create_vpk(${VITAREADER_NAME}.vpk ${VITAREADER_TITLE_ID} eboot.bin
   VERSION ${VITAREADER_VERSION} NAME ${VITAREADER_NAME}
   FILE assets/branding/icon0.png sce_sys/icon0.png
