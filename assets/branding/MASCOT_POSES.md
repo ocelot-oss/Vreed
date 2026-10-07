@@ -1,0 +1,7 @@
+# Vreed menu poses
+
+Final asset: `mascot-poses.png`, 2172×724 RGBA, three equal 724×724 cells. Created with the built-in imagegen tool using `source.png` as the identity reference, then copied into this repository without image modification. Left to right: reading, carrying books, resting against a book. Rendering adds slow horizontal/vertical movement at low opacity on the light library background. The original logo remains unchanged.
+
+Final prompt:
+
+> Create one transparent sprite atlas for the Vreed PS Vita reader menu, using the attached logo as an identity reference, not an edit target. Exactly three equal-width columns in a single horizontal row, canvas 1536 by 512 if possible. Each column contains the same small yellow round mascot, thick smooth black outline, black bowler hat, one black oval eye and one X eye, thin black stick arms and legs. Keep the reference style and proportions, pale golden yellow, minimal clean flat cartoon. Left column: seated reading an open yellow book. Middle column: standing carrying a small stack of books, looking toward the stack. Right column: resting asleep against a closed book, hat tilted, tiny sleep marks without letters. Each pose fully contained in its own square cell with generous transparent padding and equal visual scale. No logo wordmark, no text, no background, no floor, no borders, no cell dividers. Deliver actual alpha transparency. This is a game sprite atlas, crisp silhouettes, three distinct situations, no extra characters.

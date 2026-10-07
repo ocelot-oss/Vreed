@@ -28,6 +28,8 @@ Position is saved after navigation, setting changes and on return. New checkpoin
 
 ## Reading experiences
 
+Triangle includes **Police** (System, Serif, Sans, Mono) and **Capture sur signet**, disabled by default. Font changes preserve the text anchor. Press **L + R together** to choose a page of the whole book: left/right moves one page, up/down ten, or use the touch slider; Cross confirms and Circle cancels. The light shelf background now contains three slowly moving mascot situations. See [00.08 device checks](docs/DEVICE_REVIEW_5.md).
+
 Body paragraphs use justified wrapped lines; headings and final paragraph lines remain aligned left. Version 00.06 also uses buffered stereo playback for the supplied library music. See [audio and alignment review](docs/DEVICE_REVIEW_3.md).
 
 - **BOOK**: warm paper on a dark surround, restrained grain and edge shadows, running title and folios. Choose one page or an open spread with independent margins and a shaded gutter. Navigation advances by two pages in a spread, including across chapter boundaries. The right sheet is blank at an unmatched final page.
@@ -38,7 +40,7 @@ Triangle opens an overlay for mode, BOOK layout, font size, line spacing, margin
 
 Square pulls the BOOK ribbon and saves an explicit resume point, confirmed by a short chime only after successful storage. That point survives further navigation and application restarts. Square on the marked page retracts it and restores automatic resume; Square elsewhere moves it to the current page. The single ribbon keeps a visible retracted tip. In a spread, Square marks the left page.
 
-From 00.07, only the right-hand ribbon appears in a spread. Pulling the ribbon also saves a clean 960×544 PNG of the current reading view (both pages in spread mode) into `ux0:/data/Vreed/screenshots/`, created automatically. Files include a book identifier, chapter, page, timestamp and collision counter; repeated captures preserve previous images. Retracting the ribbon retains captures. A screenshot failure reports an error while retaining a successfully saved resume point.
+Only the right-hand ribbon appears in a spread. Captures are disabled by default from 00.08. When Capture sur signet is enabled in the menu, pulling the ribbon also saves a clean 960×544 PNG of the current reading view (both pages in spread mode) into `ux0:/data/Vreed/screenshots/`, created automatically. Files include a book identifier, chapter, page, timestamp and collision counter; repeated captures preserve previous images. Retracting the ribbon retains captures. A screenshot failure reports an error while retaining a successfully saved resume point.
 
 BOOK defaults to a 360 ms perceptual page curl; CLEAN and OLED NIGHT use a 160 ms slide. Choose NONE for instant turns. All modes support front-touch drags starting anywhere on the page: drag horizontally and release to complete or return. Spread turns advance two pages. Rapid physical presses finish the accepted turn before starting the next; cancelled drags never change the saved position.
 

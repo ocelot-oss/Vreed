@@ -1,5 +1,9 @@
 # Validation gate
 
+## Fonts, whole-book picker and moving poses — version 00.08
+
+[Run 37604336833](https://github.com/ocelot-oss/Vreed/actions/runs/37604336833) passed all four portable suites and native Vita packaging for `5bd7c1e2321eecf61a726b84314433ab6481be88`. Regressions cover trigger chords/taps/repeats, whole-book navigation and bounds, reflow count invalidation, VRS1 compatibility and VRS2 persistence including font/capture preferences. The downloaded 29685082-byte VPK passed SHA-256 verification. The generated 2172×724 RGBA pose atlas has genuine transparent/opaque pixels. Hardware review remains necessary for custom font appearance/metrics, first-use page indexing latency, chooser controls and moving-background frame pacing. See [device checks](DEVICE_REVIEW_5.md) and [asset generation prompt](../assets/branding/MASCOT_POSES.md).
+
 ## Light library and bookmark PNGs — version 00.07
 
 [Run 37542439753](https://github.com/ocelot-oss/Vreed/actions/runs/37542439753) passed four portable suites and native Vita packaging for `26ed806aae0d86522384dfab6b6800e46cf9948d`. The downloaded 27925752-byte VPK passed SHA-256 verification. Native compilation validates the cropped mascot drawing and simplified libpng memory-write API. Device checks still need to confirm background contrast, right-only ribbon rendering, PNG orientation/content/storage and capture latency; no native screenshot or measured capture performance is claimed. See [device review](DEVICE_REVIEW_4.md).
