@@ -19,7 +19,7 @@ Renderer::Renderer() {
   if(vita2d_init()<0) { sceSysmoduleUnloadModule(SCE_SYSMODULE_PGF); throw std::runtime_error("Graphics initialization failed"); }
   font_=vita2d_load_default_pgf();
   if(!font_) { vita2d_fini(); sceSysmoduleUnloadModule(SCE_SYSMODULE_PGF); throw std::runtime_error("System font unavailable"); }
-  logo_=vita2d_load_PNG_file("app0:/assets/branding/logo.png");
+  logo_=vita2d_load_PNG_file("app0:/assets/branding/library-logo.png");
   if(logo_) { logo_->gxm_rtgt=nullptr; logo_->depth_UID=0; vita2d_texture_set_filters(logo_,SCE_GXM_TEXTURE_FILTER_LINEAR,SCE_GXM_TEXTURE_FILTER_LINEAR); }
   mascots_=vita2d_load_PNG_file("app0:/assets/branding/mascot-poses.png");
   if(mascots_) { mascots_->gxm_rtgt=nullptr; mascots_->depth_UID=0; vita2d_texture_set_filters(mascots_,SCE_GXM_TEXTURE_FILTER_LINEAR,SCE_GXM_TEXTURE_FILTER_LINEAR); }
@@ -66,7 +66,14 @@ void Renderer::prepareImages(std::initializer_list<const Page*> pages) {
     const auto& data=*item.image; if(images_.count(data.key))continue;
     ImageTexture loaded; const auto bytes=std::size_t(data.width)*data.height*4;
     if(used+bytes<=24*1024*1024) {
-      if(data.png) {
+      if(data.rgba&&data.bytes.size()==bytes) {
+        loaded.texture=vita2d_create_empty_texture(data.width,data.height);
+        if(loaded.texture) {
+          auto* dest=static_cast<unsigned char*>(vita2d_texture_get_datap(loaded.texture));
+          const auto stride=vita2d_texture_get_stride(loaded.texture);
+          for(int y=0;y<data.height;++y)std::memcpy(dest+y*stride,data.bytes.data()+std::size_t(y)*data.width*4,data.width*4);
+        }
+      } else if(data.png) {
         png_image image{}; image.version=PNG_IMAGE_VERSION;
         if(png_image_begin_read_from_memory(&image,data.bytes.data(),data.bytes.size())) {
           if(image.width==unsigned(data.width)&&image.height==unsigned(data.height)) {
@@ -138,8 +145,8 @@ void Renderer::library(const std::vector<Book>& books,std::size_t selected,doubl
     vita2d_draw_texture_tint_part_scale(logo_,350,92,w*0.30f,h*0.19f,w*0.47f,h*0.43f,
       480.0f/(w*0.47f),410.0f/(h*0.43f),RGBA8(255,255,255,55));
   }
-  if(logo_)vita2d_draw_texture_scale(logo_,42,8,80.0f/vita2d_texture_get_width(logo_),80.0f/vita2d_texture_get_height(logo_));
-  text(140,48,config::name,1.65f,RGBA8(54,44,36,255)); text(140,80,"Bibliothèque · "+std::to_string(books.size())+" livres",0.85f,RGBA8(105,91,74,255));
+  if(logo_)vita2d_draw_texture_scale(logo_,30,-18,120.0f/vita2d_texture_get_width(logo_),120.0f/vita2d_texture_get_height(logo_));
+  text(164,68,"Bibliothèque · "+std::to_string(books.size())+" livres",0.85f,RGBA8(105,91,74,255));
   for(int row=0;row<2;++row) {
     const int y=260+row*208;
     vita2d_draw_rectangle(28,y+14,904,14,RGBA8(0,0,0,90));
@@ -147,7 +154,7 @@ void Renderer::library(const std::vector<Book>& books,std::size_t selected,doubl
     vita2d_draw_rectangle(28,y,904,2,RGBA8(157,111,71,255));
     for(int line=0;line<5;++line)vita2d_draw_rectangle(32,y+4+line*2,896,1,RGBA8(43,28,18,25));
   }
-  if(books.empty()) { text(42,210,"Ajoutez vos fichiers EPUB dans :",1.2f,RGBA8(54,44,36,255)); text(42,252,"ux0:/data/VitaReader/books",1.1f,RGBA8(54,44,36,255)); }
+  if(books.empty()) { text(42,210,"Ajoutez vos fichiers EPUB ou PDF dans :",1.2f,RGBA8(54,44,36,255)); text(42,252,"ux0:/data/VitaReader/books",1.1f,RGBA8(54,44,36,255)); }
   const unsigned colors[]={RGBA8(77,109,103,255u),RGBA8(139,72,59,255u),RGBA8(119,97,142,255u),RGBA8(154,121,61,255u),RGBA8(61,86,121,255u),RGBA8(114,91,76,255u)};
   auto first=(selected/20)*20;
   for(std::size_t i=first;i<books.size()&&i<first+20;++i) {
@@ -168,7 +175,7 @@ void Renderer::library(const std::vector<Book>& books,std::size_t selected,doubl
       remaining.erase(0,end); while(!remaining.empty()&&remaining.front()==' ')remaining.erase(0,1);
     }
     vita2d_draw_rectangle(x+8,bottom-27,56,1,RGBA8(239,218,173,150));
-    text(x+10,bottom-9,books[i].position.resumePinned?"Signet":"EPUB",0.65f,RGBA8(242,224,186,255));
+    text(x+10,bottom-9,books[i].position.resumePinned?"Signet":books[i].format==Book::Format::Pdf?"PDF":"EPUB",0.65f,RGBA8(242,224,186,255));
   }
   text(42,518,"X Ouvrir · Toucher pour sélectionner · Triangle Actualiser",0.8f,RGBA8(105,91,74,255));
 }
@@ -182,12 +189,23 @@ void Renderer::drawPage(const Page& page,int index,Position position,std::size_t
     [&](int x,const std::string& s){text(area.x+x,area.y+line.y,s,line.scale,presentation_.theme.text);});
   for(const auto& image:page.images) {
     const auto it=images_.find(image.image->key);
-    if(it!=images_.end()&&it->second.texture)vita2d_draw_texture_scale(it->second.texture,area.x+(area.width-image.width)/2,area.y+image.y,float(image.width)/image.image->width,float(image.height)/image.image->height);
+    if(it!=images_.end()&&it->second.texture) {
+      if(image.image->rgba) {
+        const float scale=pdfFitWidth_?float(area.width)/image.image->width:
+          std::min(float(area.width)/image.image->width,float(area.height)/image.image->height);
+        const float h=image.image->height*scale,w=image.image->width*scale;
+        const float maxPan=std::max(0.0f,h-area.height);
+        pdfMaxPan_=std::max(pdfMaxPan_,maxPan);
+        const float y=pdfFitWidth_?-std::min(pdfPan_,maxPan):(area.height-h)/2;
+        vita2d_draw_texture_scale(it->second.texture,area.x+(area.width-w)/2,area.y+y,scale,scale);
+      } else vita2d_draw_texture_scale(it->second.texture,area.x+(area.width-image.width)/2,area.y+image.y,float(image.width)/image.image->width,float(image.height)/image.image->height);
+    }
     else text(area.x,area.y+image.y+24,"Illustration indisponible",0.8f,presentation_.theme.secondary);
   }
   vita2d_disable_clipping();
   std::string label=std::to_string(position.page+1)+" / "+std::to_string(count);
-  if(presentation_.pageCount==2)label=std::to_string(position.chapter+1)+" · "+label;
+  if(!page.images.empty()&&page.images.front().image->rgba)label=std::to_string(position.chapter+1)+" / "+std::to_string(chapters);
+  else if(presentation_.pageCount==2)label=std::to_string(position.chapter+1)+" · "+label;
   else label="Chapitre "+std::to_string(position.chapter+1)+" / "+std::to_string(chapters)+"   ·   "+label;
   const auto paper=presentation_.paper[index];
   const int width=measure(label,0.8f);
@@ -225,6 +243,7 @@ void Renderer::opening(float progress,std::size_t selected) {
   if(t>0.75f)vita2d_draw_texture_tint(destination_,0,0,RGBA8(255,255,255,int(smoothStep((t-0.75f)/0.25f)*255)));
 }
 void Renderer::reader(const Book& book,const Page& page,Position p,std::size_t count,std::size_t chapters,const Session::VisiblePage& second,float ribbon) {
+  pdfMaxPan_=0;
   paint(paper_);
   for(int i=0;i<presentation_.pageCount;++i) {
     const auto paper=presentation_.paper[i];
@@ -235,7 +254,9 @@ void Renderer::reader(const Book& book,const Page& page,Position p,std::size_t c
   drawPage(page,0,p,count,chapters);
   if(presentation_.pageCount==2&&second.page)drawPage(*second.page,1,second.position,second.count,chapters);
   drawRibbon(ribbon);
+  if(book.format==Book::Format::Pdf)text(24,538,"X : page / largeur · Haut / bas : déplacer",0.65f,presentation_.theme.secondary);
 }
+void Renderer::panPdf(int direction) { pdfPan_=std::clamp(pdfPan_+direction*64.0f,0.0f,pdfMaxPan_); }
 void Renderer::drawRibbon(float amount) {
   if(!presentation_.theme.physical||amount<0)return;
   const auto sheet=presentation_.paper[presentation_.pageCount-1];
@@ -309,7 +330,10 @@ void Renderer::capture(vita2d_texture* target,const Book& book,Session& session,
 bool Renderer::captureTurn(const Book& book,Session& current,const Session::VisiblePage& currentSecond,Session& next,const Session::VisiblePage& nextSecond) {
   vita2d_wait_rendering_done();
   if(!ensureSurfaces())return false;
-  capture(source_,book,current,currentSecond); capture(destination_,book,next,nextSecond); return true;
+  capture(source_,book,current,currentSecond);
+  const float pan=pdfPan_,maxPan=pdfMaxPan_; pdfPan_=0;
+  capture(destination_,book,next,nextSecond);
+  pdfPan_=pan; pdfMaxPan_=maxPan; return true;
 }
 void Renderer::transition(const PageTransition& motion) {
   if(!source_||!destination_)return;

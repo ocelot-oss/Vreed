@@ -6,7 +6,7 @@ struct Position { std::size_t chapter=0,page=0,offset=0; bool hasOffset=false,re
 struct Book {
   std::string path,title,author,cover;
   Position position;
-  enum class Format { Epub }; Format format=Format::Epub;
+  enum class Format { Epub, Pdf }; Format format=Format::Epub;
 };
 std::vector<Book> discover(const std::string& directory);
 void prepareStorage();

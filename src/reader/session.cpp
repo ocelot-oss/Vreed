@@ -64,6 +64,7 @@ Session::VisiblePage Session::secondPage(const Measure& measure) {
   return {std::shared_ptr<const Page>(preview_,&preview_->pages[0]),p,preview_->pages.size()};
 }
 std::size_t Session::totalPageCount(const Measure& measure) {
+  if(pageCounts_.empty()&&epub_.isPdf())pageCounts_.assign(epub_.spine.size(),1);
   if(pageCounts_.empty()) {
     std::vector<std::size_t> counts;
     for(std::size_t chapter=0;chapter<epub_.spine.size();++chapter)counts.push_back(load(chapter,measure)->pages.size());

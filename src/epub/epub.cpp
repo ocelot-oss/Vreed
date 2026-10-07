@@ -1,3 +1,6 @@
+#ifdef VITAREADER_PDF
+#include "pdf/pdf.hpp"
+#endif
 #include "epub/epub.hpp"
 #include "app/config.hpp"
 #include <archive.h>
@@ -63,7 +66,16 @@ std::string Epub::entry(const std::string& name) const {
   throw std::runtime_error("Missing or corrupt EPUB entry: "+name);
 }
 void Epub::open(const std::string& path) {
-  path_=path; title.clear(); author.clear(); cover.clear(); spine.clear();
+  path_=path; title.clear(); author.clear(); cover.clear(); spine.clear(); pdf_.reset();
+#ifdef VITAREADER_PDF
+  auto suffix=path.size()>=4?path.substr(path.size()-4):std::string{};
+  for(auto& c:suffix)c=char(std::tolower(static_cast<unsigned char>(c)));
+  if(suffix==".pdf") {
+    pdf_=std::make_shared<PdfDocument>(path); title=pdf_->title; author=pdf_->author;
+    for(std::size_t i=0;i<pdf_->count();++i)spine.push_back(std::to_string(i));
+    return;
+  }
+#endif
   std::string package; Xml container;
   container.start=[&](std::string n,const char** a) { if(n=="rootfile"&&package.empty())package=resolve("",attr(a,"full-path")); };
   parse(entry("META-INF/container.xml"),container); if(package.empty())throw std::runtime_error("EPUB has no package");
@@ -83,6 +95,9 @@ void Epub::open(const std::string& path) {
 }
 Chapter Epub::chapter(std::size_t index) const {
   if(index>=spine.size())throw std::runtime_error("Invalid chapter");
+#ifdef VITAREADER_PDF
+  if(pdf_) { Chapter result; Block block; block.kind=Block::Kind::Image; block.image=pdf_->page(index); result.blocks.push_back(std::move(block)); return result; }
+#endif
   Chapter result; Block current; int body=0,skip=0,bold=0,italic=0; bool space=false; std::size_t imageBytes=0;
   auto flush=[&] { if(!current.runs.empty())result.blocks.push_back(std::move(current)); current=Block{}; space=false; };
   auto append=[&](const std::string& s) { if(current.runs.empty()||current.runs.back().bold!=(bold>0)||current.runs.back().italic!=(italic>0))current.runs.push_back({{},bold>0,italic>0}); current.runs.back().text+=s; };

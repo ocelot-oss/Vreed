@@ -3,7 +3,7 @@
 #include <memory>
 #include <cstdint>
 namespace vr {
-struct ImageData { std::string key,bytes; int width=0,height=0; bool png=false; };
+struct ImageData { std::string key,bytes; int width=0,height=0; bool png=false,rgba=false; };
 inline std::shared_ptr<const ImageData> imageData(std::string key,std::string bytes) {
   auto image=std::make_shared<ImageData>(); image->key=std::move(key); image->bytes=std::move(bytes);
   const auto* p=reinterpret_cast<const unsigned char*>(image->bytes.data()); const auto n=image->bytes.size();

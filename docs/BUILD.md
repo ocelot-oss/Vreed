@@ -56,3 +56,9 @@ ctest --test-dir build-host --output-on-failure
 The EPUB integration test checks metadata, spine order, emphasis preservation, bidirectional chapter navigation, stale resume clamping and preservation of the current session after a failed open.
 
 If libarchive/Expat are unavailable, add `-DVITAREADER_EPUB_TESTS=OFF` to run the portable layout/theme and synthetic-session tests only. The real application retains the existing EPUB parser.
+
+## MuPDF and corresponding sources
+
+Before native CMake configuration run `sh tools/build_mupdf.sh vita` in the VitaSDK Linux environment. CI also builds the same pinned engine for portable PDF tests. MuPDF 1.28.5 and its exact submodule revisions are downloaded automatically.
+
+Each successful Actions run provides **Vreed-VPK** and **Vreed-Sources** side by side. The source archive contains Vreed, its build recipes, MuPDF and its dependencies, excluding generated build outputs. Vreed is now distributed under AGPL-3.0-or-later with the user's agreement.

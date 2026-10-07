@@ -13,7 +13,7 @@ jobs:
   core-tests:
     name: Portable tests
     runs-on: ubuntu-24.04
-    timeout-minutes: 15
+    timeout-minutes: 40
     steps:
       - uses: actions/checkout@v4
         with:
@@ -30,8 +30,9 @@ jobs:
           path: assets/audio/library-stereo.pcm
       - name: Configure and build tests
         run: |
-          cmake -S . -B build-host -DVITAREADER_HOST_TESTS=ON -DCMAKE_BUILD_TYPE=Release
-          cmake --build build-host --target layout_test session_test interaction_test epub_test --parallel 2
+          sh tools/build_mupdf.sh host
+          cmake -S . -B build-host -DVITAREADER_HOST_TESTS=ON -DVREED_PDF_TESTS=ON -DCMAKE_BUILD_TYPE=Release
+          cmake --build build-host --target layout_test session_test interaction_test epub_test pdf_test --parallel 2
       - name: Run tests
         run: ctest --test-dir build-host --output-on-failure
 
@@ -39,7 +40,7 @@ jobs:
     name: Vita VPK
     needs: core-tests
     runs-on: ubuntu-24.04
-    timeout-minutes: 25
+    timeout-minutes: 40
     container:
       image: vitasdk/vitasdk:2026.08-20260815
       options: --user root
@@ -57,7 +58,9 @@ jobs:
           name: Library-PCM
           path: assets/audio
       - name: Configure Vita release
-        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+        run: |
+          sh tools/build_mupdf.sh vita
+          cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
       - name: Build VPK
         run: cmake --build build --parallel 2
       - name: Check package
@@ -72,4 +75,13 @@ jobs:
             build/Vreed.vpk
             build/Vreed.vpk.sha256
           if-no-files-found: error
+          retention-days: 14
+      - name: Archive corresponding sources
+        run: |
+          tar --exclude=.git --exclude=build --exclude=build-host --exclude=.tools --exclude=.deps/mupdf/build --exclude=assets/audio/library-stereo.pcm -czf /tmp/Vreed-Sources.tar.gz .
+          mv /tmp/Vreed-Sources.tar.gz build/
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Vreed-Sources
+          path: build/Vreed-Sources.tar.gz
           retention-days: 14

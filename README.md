@@ -1,5 +1,10 @@
 # Vreed
 
+Version 00.09 adds native PDF rendering through MuPDF (AGPL-3.0-or-later). Put PDF and EPUB files in `ux0:/data/VitaReader/books/`, then refresh the library. In a PDF, Cross switches page-fit/width-fit and Up/Down pans the enlarged page. Page turns, two-page mode, bookmarks, screenshots and the L+R page chooser remain available. PDFs retain their original fonts and layout. Password-protected PDFs are not supported.
+
+The library header now uses a larger transparent logo over the beige background. Custom fonts cache glyphs per pixel size with transparent atlas gutters, addressing reported Sans artifacts. Sources and license: [LICENSE](LICENSE), [third-party notices](THIRD_PARTY_NOTICES.md).
+
+
 Version 00.03 adopts the supplied Vreed logo for the library, Vita bubble and LiveArea. Display name/version are centralized in `config/identity.cmake` and generated into the native header. The title ID `VITARD001` and legacy `ux0:/data/VitaReader/` storage remain unchanged so this update retains existing books, settings and resume points. The package is now `Vreed.vpk`.
 
 Native PS Vita EPUB reader, milestones 1–3. C++17, VitaSDK, vita2d system PGF fonts, libarchive ZIP and Expat XML. Targets 960×544. No browser runtime.

@@ -35,6 +35,7 @@ void App::refreshSecond(const Measure& measure) {
 void App::turnEvents(TurnEvents events,double nowMs) {
   if(events.sound)audio_.emit(events.direction>0?AudioEvent::PageForward:AudioEvent::PageBackward);
   if(events.commit) {
+    renderer_.resetPdfPan();
     second_=std::move(candidateSecond_); refreshPages_=false;
     frameStats_.lastTurnMs=nowMs-turnStarted_; checkpoint();
   }
@@ -109,6 +110,7 @@ void App::run() {
           renderer_.prepareLayout();
           const auto next=renderer_.readingPresentation(settings_);
           session_.open(books_[selected_],measure,next.layout);
+          renderer_.resetPdfPan();
           renderer_.configure(next); presentation_=next;
           state_=State::Reader; overlay_=false; jumpOpen_=false;
           const auto saved=books_[selected_].position;
@@ -132,7 +134,7 @@ void App::run() {
           if(input.back||input.rescan)jumpOpen_=false;
           else if(input.open) {
             if(session_.goToPage(jumpPage_,measure)) {
-              jumpOpen_=false; refreshPages_=true; candidateSecond_={}; error_.clear(); checkpoint();
+              jumpOpen_=false; refreshPages_=true; candidateSecond_={}; error_.clear(); renderer_.resetPdfPan(); checkpoint();
             }
           } else {
             const std::size_t step=input.up||input.down?10:1;
@@ -162,6 +164,10 @@ void App::run() {
                 error_="Signet enregistré, capture : "+storageFailure;
             }
           } else error_="Signet : "+storageFailure;
+        } else if(books_[selected_].format==Book::Format::Pdf&&(input.open||input.up||input.down)) {
+          finishTurn(input.nowMs);
+          if(input.open)renderer_.togglePdfZoom();
+          else renderer_.panPdf(input.down?1:-1);
         } else if(input.previous||input.next) {
           requestTurn(input.next?1:-1,measure);
         } else {

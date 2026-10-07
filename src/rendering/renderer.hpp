@@ -15,6 +15,9 @@ public:
   int measure(const std::string& text,float scale) const;
   void prepareLayout();
   void selectFont(int family);
+  void togglePdfZoom() { pdfFitWidth_=!pdfFitWidth_; pdfPan_=0; }
+  void panPdf(int direction);
+  void resetPdfPan() { pdfPan_=0; }
   void prepareImages(std::initializer_list<const Page*> pages);
   Presentation readingPresentation(const ReadingSettings& settings) const;
   void configure(const Presentation& presentation);
@@ -34,6 +37,8 @@ public:
   void pageChooser(std::size_t page,std::size_t count);
   void message(const std::string& message);
 private:
+  bool pdfFitWidth_=false;
+  float pdfPan_=0,pdfMaxPan_=0;
   struct ImageTexture { vita2d_texture* texture=nullptr; std::size_t bytes=0; };
   std::map<std::string,ImageTexture> images_;
   void clearImages();
