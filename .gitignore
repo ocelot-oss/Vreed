@@ -6,6 +6,7 @@ build-host/
 eboot.bin
 __pycache__/
 .tools/
+.deps/
 
 /assets/audio/library-stereo.pcm
 /assets/fonts/dejavu.tar.bz2

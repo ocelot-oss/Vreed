@@ -2,7 +2,7 @@
 
 ## GitHub Actions (no local SDK or administrator access)
 
-The workflow `.github/workflows/build-vita.yml` first runs all four portable suites on Ubuntu, including real libarchive/Expat integration. It then builds the native release in the full official VitaSDK image `vitasdk/vitasdk:2026.08-20260815`. The dated image tag fixes the SDK image rather than following `latest`.
+The workflow `.github/workflows/build-vita.yml` first runs six portable suites on Ubuntu, including real EPUB and MuPDF integration. It then builds the native release in the full official VitaSDK image `vitasdk/vitasdk:2026.08-20260815`. The dated image tag fixes the SDK image rather than following `latest`.
 
 1. Create a GitHub repository (private is fine), and push this project to its `main` branch. `.tools/` is excluded; do not upload downloaded SDKs or PowerShell.
 2. Open **Actions → Build Vreed**. A push to `main` starts it automatically; **Run workflow** starts it manually once the workflow is on the default branch.
@@ -22,6 +22,7 @@ Use a Linux VitaSDK installation (or WSL2 with a Linux distribution). This proje
 3. Build:
 
 ```sh
+sh tools/build_mupdf.sh vita
 cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
 cmake --build build -j2
 ```
@@ -48,7 +49,8 @@ The complete Vita link and resulting package require VitaSDK. Host checks cannot
 On a host with CMake, a C++ compiler, libarchive and Expat development packages, run the complete portable test suite in a separate build directory:
 
 ```sh
-cmake -S . -B build-host -DVITAREADER_HOST_TESTS=ON
+sh tools/build_mupdf.sh host
+cmake -S . -B build-host -DVITAREADER_HOST_TESTS=ON -DVREED_PDF_TESTS=ON
 cmake --build build-host
 ctest --test-dir build-host --output-on-failure
 ```
