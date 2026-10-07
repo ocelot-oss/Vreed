@@ -53,6 +53,8 @@ bool adjustSetting(ReadingSettings& s,int row,int direction) {
     }
     case 6:s.pageSound=!s.pageSound;break;
     case 7:s.soundVolume=cycle(s.soundVolume,direction,4);break;
+    case 8:s.fontFamily=cycle(s.fontFamily,direction,4);break;
+    case 9:s.bookmarkScreenshot=!s.bookmarkScreenshot;break;
     default:return false;
   }
   return true;
@@ -68,6 +70,8 @@ std::string settingValue(const ReadingSettings& s,int row) {
     case 5:switch(animationFor(s)) { case TransitionKind::Curl:return "Page Curl"; case TransitionKind::Slide:return "Slide"; case TransitionKind::None:return "Aucune"; } break;
     case 6:return s.pageSound?"Activé":"Désactivé";
     case 7:return std::to_string(s.soundVolume*25)+" %";
+    case 8: { const char* fonts[]={"Système","Serif","Sans","Mono"}; return fonts[s.fontFamily]; }
+    case 9:return s.bookmarkScreenshot?"Activée":"Désactivée";
     default:return {};
   }
   return {};
@@ -78,6 +82,7 @@ TransitionKind animationFor(const ReadingSettings& s) {
 }
 bool validSettings(const ReadingSettings& s) {
   const auto mode=static_cast<int>(s.mode),layout=static_cast<int>(s.bookLayout);
+  if(s.fontFamily<0||s.fontFamily>3)return false;
   if(mode<0||mode>2||layout<0||layout>1||s.fontSize<0||s.fontSize>2||s.lineSpacing<0||s.lineSpacing>2||s.margins<0||s.margins>2||s.soundVolume<0||s.soundVolume>3)return false;
   for(int i=0;i<3;++i)if(static_cast<int>(s.animation[i])<0||static_cast<int>(s.animation[i])>(i==0?2:1))return false;
   return true;

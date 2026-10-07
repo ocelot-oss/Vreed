@@ -22,6 +22,7 @@ void Session::open(Book& book,const Measure& measure,const Layout& layout) {
   chapter->pages=paginate(chapter->content,layout,measure);
   p.page=p.hasOffset?pageForOffset(chapter->pages,p.offset):std::min(p.page,chapter->pages.size()-1);
   epub_=std::move(next); current_=std::move(chapter); preview_.reset(); position=p; layout_=layout;
+  pageCounts_.clear();
   if(!position.hasOffset)updateOffset();
   if(!epub_.title.empty())book.title=epub_.title;
   book.author=epub_.author; book.cover=epub_.cover;
@@ -48,6 +49,7 @@ void Session::repaginate(const Layout& layout,const Measure& measure) {
   next->pages=paginate(next->content,layout,measure);
   const auto index=pageForOffset(next->pages,position.offset);
   current_=std::move(next); preview_.reset(); layout_=layout; position.page=index;
+  pageCounts_.clear();
   // Preserve the same text anchor across repeated setting changes; navigation resets it.
 }
 Session::VisiblePage Session::secondPage(const Measure& measure) {
@@ -59,5 +61,31 @@ Session::VisiblePage Session::secondPage(const Measure& measure) {
   preview_=load(position.chapter+1,measure);
   Position p{position.chapter+1,0,preview_->pages[0].offset,true};
   return {std::shared_ptr<const Page>(preview_,&preview_->pages[0]),p,preview_->pages.size()};
+}
+std::size_t Session::totalPageCount(const Measure& measure) {
+  if(pageCounts_.empty()) {
+    std::vector<std::size_t> counts;
+    for(std::size_t chapter=0;chapter<epub_.spine.size();++chapter)counts.push_back(load(chapter,measure)->pages.size());
+    pageCounts_=std::move(counts);
+  }
+  std::size_t total=0;
+  for(auto count:pageCounts_) {
+    if(count>std::numeric_limits<std::size_t>::max()-total)throw std::runtime_error("Too many book pages");
+    total+=count;
+  }
+  return total;
+}
+std::size_t Session::globalPageIndex() const {
+  std::size_t index=position.page;
+  for(std::size_t chapter=0;chapter<position.chapter&&chapter<pageCounts_.size();++chapter)index+=pageCounts_[chapter];
+  return index;
+}
+bool Session::goToPage(std::size_t index,const Measure& measure) {
+  if(index>=totalPageCount(measure))return false;
+  std::size_t chapter=0;
+  while(index>=pageCounts_[chapter]) { index-=pageCounts_[chapter]; ++chapter; }
+  auto next=load(chapter,measure);
+  if(index>=next->pages.size())return false;
+  preview_=current_; current_=std::move(next); position.chapter=chapter; position.page=index; updateOffset(); return true;
 }
 }

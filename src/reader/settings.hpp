@@ -10,6 +10,8 @@ struct ReadingSettings {
   ReadingMode mode=ReadingMode::Book;
   BookLayout bookLayout=BookLayout::Single;
   int fontSize=1, lineSpacing=1, margins=1;
+  int fontFamily=0; // System, DejaVu Serif, Sans, Mono.
+  bool bookmarkScreenshot=false;
   std::array<TransitionKind,3> animation{TransitionKind::Curl,TransitionKind::Slide,TransitionKind::Slide};
   bool pageSound=true;
   int soundVolume=1; // 0..3: quiet levels 0%, 25%, 50%, 75% of the already subdued placeholder.
@@ -31,7 +33,7 @@ Presentation presentation(const ReadingSettings& settings,const HeightMeasure& h
 const char* modeName(ReadingMode mode);
 bool adjustSetting(ReadingSettings& settings,int row,int direction);
 std::string settingValue(const ReadingSettings& settings,int row);
-constexpr int settingsRowCount=8;
+constexpr int settingsRowCount=10;
 TransitionKind animationFor(const ReadingSettings& settings);
 bool validSettings(const ReadingSettings& settings);
 }

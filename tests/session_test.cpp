@@ -10,6 +10,11 @@ int main() {
   Layout layout; layout.width=60; layout.height=20; layout.lineHeight=20; layout.scale=1;
   Book book; book.path="good"; Session session; session.open(book,measure,layout);
   assert(session.pageCount()==3);
+  assert(session.totalPageCount(measure)==6&&session.globalPageIndex()==0);
+  assert(session.goToPage(5,measure)&&session.position.chapter==2&&session.position.page==0);
+  assert(session.globalPageIndex()==5);
+  assert(!session.goToPage(6,measure)&&session.position.chapter==2);
+  assert(session.goToPage(0,measure));
   auto right=session.secondPage(measure); assert(right.position.chapter==0&&right.position.page==1);
   auto retained=right;
   assert(session.turn(1,measure,2)); assert(session.position.chapter==0&&session.position.page==2);
@@ -23,9 +28,11 @@ int main() {
   auto anchor=session.position.offset;
   Layout tall=layout; tall.height=100;
   session.repaginate(tall,measure); assert(session.position.page==0);
+  assert(session.totalPageCount(measure)==3);
   assert(retained.page->lines[0].text=="A1"); // A visible-page handle survives cache replacement safely.
   assert(session.currentPageContains(0,anchor));
   session.repaginate(layout,measure);
+  assert(session.totalPageCount(measure)==6);
   assert(session.position.page==2&&session.position.offset==anchor);
   auto rejecting=[](const std::string&,float)->int {throw std::runtime_error("Metrics failed");};
   bool failed=false; try { session.repaginate(tall,rejecting); } catch(...) { failed=true; }

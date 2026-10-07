@@ -78,4 +78,9 @@ vita_create_vpk(${VITAREADER_NAME}.vpk ${VITAREADER_TITLE_ID} eboot.bin
   FILE assets/branding/startup.png sce_sys/livearea/contents/startup.png
   FILE assets/branding/template.xml sce_sys/livearea/contents/template.xml
   FILE assets/branding/logo.png assets/branding/logo.png
+  FILE assets/branding/mascot-poses.png assets/branding/mascot-poses.png
+  FILE assets/fonts/DejaVuSerif.ttf assets/fonts/DejaVuSerif.ttf
+  FILE assets/fonts/DejaVuSans.ttf assets/fonts/DejaVuSans.ttf
+  FILE assets/fonts/DejaVuSansMono.ttf assets/fonts/DejaVuSansMono.ttf
+  FILE assets/fonts/LICENSE assets/fonts/LICENSE
   FILE assets/audio/library-stereo.pcm assets/audio/library-stereo.pcm)

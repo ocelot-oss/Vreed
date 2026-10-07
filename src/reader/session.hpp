@@ -14,11 +14,15 @@ public:
   std::size_t pageCount() const { return current_->pages.size(); }
   std::size_t chapterCount() const { return epub_.spine.size(); }
   bool currentPageContains(std::size_t chapter,std::size_t offset) const;
+  std::size_t totalPageCount(const Measure& measure);
+  std::size_t globalPageIndex() const;
+  bool goToPage(std::size_t index,const Measure& measure);
   Position position;
 private:
   struct ChapterPages { std::size_t index; Chapter content; std::vector<Page> pages; };
   Epub epub_; Layout layout_;
   std::shared_ptr<const ChapterPages> current_,preview_;
+  std::vector<std::size_t> pageCounts_;
   std::shared_ptr<const ChapterPages> load(std::size_t index,const Measure& measure) const;
   void updateOffset();
 };

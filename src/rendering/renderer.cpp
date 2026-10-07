@@ -21,16 +21,36 @@ Renderer::Renderer() {
   if(!font_) { vita2d_fini(); sceSysmoduleUnloadModule(SCE_SYSMODULE_PGF); throw std::runtime_error("System font unavailable"); }
   logo_=vita2d_load_PNG_file("app0:/assets/branding/logo.png");
   if(logo_) { logo_->gxm_rtgt=nullptr; logo_->depth_UID=0; vita2d_texture_set_filters(logo_,SCE_GXM_TEXTURE_FILTER_LINEAR,SCE_GXM_TEXTURE_FILTER_LINEAR); }
+  mascots_=vita2d_load_PNG_file("app0:/assets/branding/mascot-poses.png");
+  if(mascots_) { mascots_->gxm_rtgt=nullptr; mascots_->depth_UID=0; vita2d_texture_set_filters(mascots_,SCE_GXM_TEXTURE_FILTER_LINEAR,SCE_GXM_TEXTURE_FILTER_LINEAR); }
 }
 Renderer::~Renderer() {
   vita2d_wait_rendering_done();
   clearImages();
   if(logo_)vita2d_free_texture(logo_);
+  if(mascots_)vita2d_free_texture(mascots_);
+  if(readingFont_)vita2d_free_font(readingFont_);
   if(source_)vita2d_free_texture(source_);
   if(destination_)vita2d_free_texture(destination_);
   vita2d_free_pgf(font_); vita2d_fini(); sceSysmoduleUnloadModule(SCE_SYSMODULE_PGF);
 }
 void Renderer::prepareLayout() { vita2d_wait_rendering_done(); } // Measurements may populate the shared glyph atlas.
+void Renderer::selectFont(int family) {
+  if(family==fontFamily_)return;
+  if(family<0||family>3)throw std::runtime_error("Police inconnue");
+  vita2d_wait_rendering_done();
+  const char* paths[]={"","app0:/assets/fonts/DejaVuSerif.ttf","app0:/assets/fonts/DejaVuSans.ttf","app0:/assets/fonts/DejaVuSansMono.ttf"};
+  auto* next=family?vita2d_load_font_file(paths[family]):nullptr;
+  if(family&&!next)throw std::runtime_error("Impossible de charger la police");
+  if(readingFont_)vita2d_free_font(readingFont_);
+  readingFont_=next; fontFamily_=family;
+}
+int Renderer::rawWidth(const std::string& s,float scale) const {
+  return readingFont_?vita2d_font_text_width(readingFont_,unsigned(std::max(1,int(24*scale))),s.c_str()):vita2d_pgf_text_width(font_,scale,s.c_str());
+}
+int Renderer::fontHeight(float scale) const {
+  return readingFont_?vita2d_font_text_height(readingFont_,unsigned(std::max(1,int(24*scale))),"Agéœ"):vita2d_pgf_text_height(font_,scale,"Agéœ");
+}
 void Renderer::clearImages() {
   for(auto& pair:images_)if(pair.second.texture)vita2d_free_texture(pair.second.texture);
   images_.clear();
@@ -75,7 +95,7 @@ void Renderer::prepareImages(std::initializer_list<const Page*> pages) {
   }
 }
 Presentation Renderer::readingPresentation(const ReadingSettings& settings) const {
-  return presentation(settings,[&](float scale){return vita2d_pgf_text_height(font_,scale,"Agéœ");});
+  return presentation(settings,[&](float scale){return fontHeight(scale);});
 }
 void Renderer::configure(const Presentation& p) {
   clearImages();
@@ -87,10 +107,13 @@ void Renderer::paint(const std::vector<PaintRect>& rectangles) {
   for(const auto& rect:rectangles)vita2d_draw_rectangle(rect.bounds.x,rect.bounds.y,rect.bounds.width,rect.bounds.height,rect.color);
 }
 int Renderer::measure(const std::string& s,float scale) const {
-  return textAdvance(s,scale,[&](const std::string& piece,float size){return vita2d_pgf_text_width(font_,size,piece.c_str());},[](int,const std::string&){});
+  return textAdvance(s,scale,[&](const std::string& piece,float size){return rawWidth(piece,size);},[](int,const std::string&){});
 }
 void Renderer::text(int x,int y,const std::string& s,float scale,unsigned color) {
-  textAdvance(s,scale,[&](const std::string& piece,float size){return vita2d_pgf_text_width(font_,size,piece.c_str());},[&](int offset,const std::string& piece){vita2d_pgf_draw_text(font_,x+offset,y,color,scale,piece.c_str());});
+  textAdvance(s,scale,[&](const std::string& piece,float size){return rawWidth(piece,size);},[&](int offset,const std::string& piece){
+    if(readingFont_)vita2d_font_draw_text(readingFont_,x+offset,y,color,unsigned(std::max(1,int(24*scale))),piece.c_str());
+    else vita2d_pgf_draw_text(font_,x+offset,y,color,scale,piece.c_str());
+  });
 }
 std::string Renderer::fit(const std::string& s,int width,float scale) const {
   if(measure(s,scale)<=width)return s; std::string out=s;
@@ -98,10 +121,19 @@ std::string Renderer::fit(const std::string& s,int width,float scale) const {
 }
 void Renderer::begin(bool reading) { reading_=reading; vita2d_set_clear_color(reading?presentation_.theme.background:RGBA8(15,20,25,255)); vita2d_start_drawing(); vita2d_clear_screen(); }
 void Renderer::finish() { vita2d_end_drawing(); vita2d_swap_buffers(); }
-void Renderer::library(const std::vector<Book>& books,std::size_t selected) {
+void Renderer::library(const std::vector<Book>& books,std::size_t selected,double nowMs) {
+  libraryTime_=nowMs;
   vita2d_draw_rectangle(0,0,960,544,RGBA8(248,243,230,255));
   // Sample only the mascot area of the existing logo, leaving the wordmark out.
-  if(logo_) {
+  if(mascots_) {
+    const float cell=vita2d_texture_get_width(mascots_)/3.0f,height=vita2d_texture_get_height(mascots_);
+    const float t=float(nowMs/1000);
+    for(int pose=0;pose<3;++pose) {
+      const float x=90+pose*255+std::sin(t*0.16f+pose*2)*44;
+      const float y=95+std::sin(t*0.24f+pose)*19+pose*16;
+      vita2d_draw_texture_tint_part_scale(mascots_,x,y,pose*cell,0,cell,height,290/cell,290/height,RGBA8(255,255,255,40));
+    }
+  } else if(logo_) {
     const float w=vita2d_texture_get_width(logo_),h=vita2d_texture_get_height(logo_);
     vita2d_draw_texture_tint_part_scale(logo_,350,92,w*0.30f,h*0.19f,w*0.47f,h*0.43f,
       480.0f/(w*0.47f),410.0f/(h*0.43f),RGBA8(255,255,255,55));
@@ -169,7 +201,7 @@ bool Renderer::captureOpening(const std::vector<Book>& books,std::size_t selecte
   const unsigned palette[]={RGBA8(77,109,103,255u),RGBA8(139,72,59,255u),RGBA8(119,97,142,255u),RGBA8(154,121,61,255u),RGBA8(61,86,121,255u),RGBA8(114,91,76,255u)};
   openingCover_=palette[seed%6];
   vita2d_start_drawing_advanced(source_,0); vita2d_set_clear_color(RGBA8(24,21,21,255)); vita2d_clear_screen();
-  library(books,selected); vita2d_end_drawing(); vita2d_wait_rendering_done();
+  library(books,selected,libraryTime_); vita2d_end_drawing(); vita2d_wait_rendering_done();
   capture(destination_,books[selected],session,second); return true;
 }
 void Renderer::opening(float progress,std::size_t selected) {
@@ -325,22 +357,33 @@ void Renderer::settings(const ReadingSettings& settings,int selected) {
   const unsigned dim=oled?RGBA8(89,96,98,255):RGBA8(137,151,159,255);
   const unsigned accent=oled?presentation_.theme.accent:
     settings.mode==ReadingMode::Book?RGBA8(218,172,129,255):RGBA8(139,182,202,255);
-  vita2d_draw_rectangle(245,72,470,406,bg);
-  vita2d_draw_rectangle(245,72,470,1,dim);
-  text(269,111,"Lecture",1.2f,fg);
-  const char* labels[]={"Mode","Disposition","Taille de police","Interligne","Marges","Animation","Son de page","Volume"};
+  vita2d_draw_rectangle(225,32,510,478,bg);
+  vita2d_draw_rectangle(225,32,510,1,dim);
+  text(249,68,"Lecture",1.2f,fg);
+  const char* labels[]={"Mode","Disposition","Taille de police","Interligne","Marges","Animation","Son de page","Volume","Police","Capture sur signet"};
   for(int row=0;row<settingsRowCount;++row) {
-    const int y=135+row*34;
+    const int y=85+row*34;
     if(row==selected) {
-      if(!oled)vita2d_draw_rectangle(257,y-3,446,30,RGBA8(36,48,56,255));
-      vita2d_draw_rectangle(258,y+3,2,21,accent);
+      if(!oled)vita2d_draw_rectangle(237,y-3,486,30,RGBA8(36,48,56,255));
+      vita2d_draw_rectangle(238,y+3,2,21,accent);
     }
-    text(274,y+20,labels[row],0.95f,row==1&&settings.mode!=ReadingMode::Book?dim:fg);
+    text(250,y+20,labels[row],0.85f,row==1&&settings.mode!=ReadingMode::Book?dim:fg);
     const auto value=settingValue(settings,row);
-    text(690-measure(value,0.9f),y+20,value,0.9f,row==selected?accent:dim);
+    text(710-measure(value,0.85f),y+20,value,0.85f,row==selected?accent:dim);
   }
-  text(269,444,presentation_.spreadLimited?"Grande police : une page pour rester lisible":"Gauche / droite : modifier",0.75f,dim);
-  text(269,468,"O ou Triangle : fermer",0.75f,dim);
+  text(249,466,presentation_.spreadLimited?"Grande police : une page pour rester lisible":"Gauche / droite : modifier",0.75f,dim);
+  text(249,492,"O ou Triangle : fermer",0.75f,dim);
+}
+void Renderer::pageChooser(std::size_t page,std::size_t count) {
+  const auto fg=presentation_.theme.text;
+  vita2d_draw_rectangle(190,145,580,250,presentation_.theme.paper);
+  text(220,183,"Aller à une page du livre",1.05f,fg);
+  text(220,227,std::to_string(page+1)+" / "+std::to_string(count),1.4f,fg);
+  vita2d_draw_rectangle(250,270,460,4,presentation_.theme.secondary);
+  const float x=250+(count>1?460.0f*page/(count-1):0);
+  vita2d_draw_fill_circle(x,272,9,presentation_.theme.accent);
+  text(220,323,"Gauche / droite : 1 · Haut / bas : 10",0.8f,fg);
+  text(220,353,"Toucher la barre · X Valider · O Annuler",0.75f,fg);
 }
 void Renderer::message(const std::string& s) {
   const bool oled=reading_&&presentation_.theme.background==RGBA8(0,0,0,255);

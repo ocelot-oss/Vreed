@@ -4,6 +4,7 @@
 #include "storage/file.hpp"
 #include <exception>
 #include <cstdio>
+#include <algorithm>
 namespace vr {
 bool App::bookmarked() const {
   return bookmark_.set&&session_.currentPageContains(bookmark_.chapter,bookmark_.offset);
@@ -11,12 +12,16 @@ bool App::bookmarked() const {
 void App::changeSetting(int direction,const Measure& measure) {
   auto candidate=settings_;
   if(!adjustSetting(candidate,settingRow_,direction))return;
-  if(settingRow_<5) {
-    renderer_.prepareLayout(); const auto next=renderer_.readingPresentation(candidate);
-    session_.repaginate(next.layout,measure); renderer_.configure(next); presentation_=next; refreshPages_=true;
+  const bool reflow=settingRow_<5||settingRow_==8;
+  if(reflow) {
+    renderer_.prepareLayout();
+    try {
+      renderer_.selectFont(candidate.fontFamily); const auto next=renderer_.readingPresentation(candidate);
+      session_.repaginate(next.layout,measure); renderer_.configure(next); presentation_=next; refreshPages_=true;
+    } catch(...) { renderer_.selectFont(settings_.fontFamily); throw; }
   }
   settings_=candidate; audio_.settings(settings_.pageSound,settings_.soundVolume);
-  error_.clear(); if(settingRow_<5)checkpoint();
+  error_.clear(); if(reflow)checkpoint();
   if(!saveSettings(config::settings,settings_))error_="Réglages : "+storageFailure;
 }
 void App::refreshSecond(const Measure& measure) {
@@ -69,6 +74,8 @@ void App::run() {
   } catch(const std::exception& e) { error_="Stockage : "+std::string(e.what()); }
   try {
     settings_=loadSettings(config::settings); audio_.settings(settings_.pageSound,settings_.soundVolume);
+    try { renderer_.selectFont(settings_.fontFamily); }
+    catch(const std::exception& e) { settings_.fontFamily=0; error_=e.what(); }
     books_=discover(config::books); audio_.emit(AudioEvent::StartupMusic);
   } catch(const std::exception& e) { error_=e.what(); }
   auto measure=[&](const std::string& s,float scale){return renderer_.measure(s,scale);};
@@ -103,7 +110,7 @@ void App::run() {
           const auto next=renderer_.readingPresentation(settings_);
           session_.open(books_[selected_],measure,next.layout);
           renderer_.configure(next); presentation_=next;
-          state_=State::Reader; overlay_=false;
+          state_=State::Reader; overlay_=false; jumpOpen_=false;
           const auto saved=books_[selected_].position;
           bookmark_={saved.resumePinned,saved.chapter,saved.offset}; ribbon_.setVisible(bookmarked(),input.nowMs,true);
           audio_.emit(AudioEvent::StopMusic);
@@ -114,7 +121,27 @@ void App::run() {
       } else {
         turnEvents(turn_.tick(input.nowMs),input.nowMs);
         if(input.quit) { finishTurn(input.nowMs); checkpoint(); running=false; }
-        if(input.rescan) { finishTurn(input.nowMs); overlay_=!overlay_; }
+        else if(input.jump) {
+          finishTurn(input.nowMs); overlay_=false;
+          if(jumpOpen_)jumpOpen_=false;
+          else {
+            renderer_.prepareLayout(); jumpCount_=session_.totalPageCount(measure);
+            jumpPage_=session_.globalPageIndex(); jumpOpen_=true;
+          }
+        } else if(jumpOpen_) {
+          if(input.back||input.rescan)jumpOpen_=false;
+          else if(input.open) {
+            if(session_.goToPage(jumpPage_,measure)) {
+              jumpOpen_=false; refreshPages_=true; candidateSecond_={}; error_.clear(); checkpoint();
+            }
+          } else {
+            const std::size_t step=input.up||input.down?10:1;
+            if(input.previous||input.up)jumpPage_=step>jumpPage_?0:jumpPage_-step;
+            if(input.next||input.down)jumpPage_+=std::min(step,jumpCount_-1-jumpPage_);
+            if((input.touch.phase==TouchPhase::Down||input.touch.phase==TouchPhase::Move)&&input.touch.y>=245&&input.touch.y<=300)
+              jumpPage_=std::size_t(std::clamp(double(input.touch.x-250)/460,0.0,1.0)*(jumpCount_-1)+0.5);
+          }
+        } else if(input.rescan) { finishTurn(input.nowMs); overlay_=!overlay_; }
         else if(overlay_) {
           if(input.back)overlay_=false;
           else if(input.up)settingRow_=(settingRow_+settingsRowCount-1)%settingsRowCount;
@@ -129,7 +156,7 @@ void App::run() {
             books_[selected_].position=saved;
             bookmark_={!active,saved.chapter,saved.offset}; ribbon_.setVisible(!active,input.nowMs);
             audio_.emit(active?AudioEvent::BookmarkRemove:AudioEvent::BookmarkInsert); error_.clear();
-            if(!active) {
+            if(!active&&settings_.bookmarkScreenshot) {
               refreshSecond(measure); renderer_.prepareImages({&session_.page(),second_.page.get()});
               if(!renderer_.saveScreenshot(books_[selected_],session_,second_,config::screenshots))
                 error_="Signet enregistré, capture : "+storageFailure;
@@ -154,7 +181,7 @@ void App::run() {
       ribbon_.setVisible(bookmarked()&&settings_.mode==ReadingMode::Book,renderNow); ribbon_.tick(renderNow);
     }
     renderer_.begin(state_!=State::Library);
-    if(state_==State::Library)renderer_.library(books_,selected_);
+    if(state_==State::Library)renderer_.library(books_,selected_,renderNow);
     else if(state_==State::Opening)renderer_.opening(float((renderNow-openingStarted_)/650),selected_);
     else {
       if(turn_.motion().active()&&turn_.motion().kind()!=TransitionKind::None) {
@@ -162,6 +189,7 @@ void App::run() {
       } else renderer_.reader(books_[selected_],session_.page(),session_.position,session_.pageCount(),session_.chapterCount(),second_,ribbon_.amount());
       renderer_.boundaryFeedback(feedback_.direction(),feedback_.amount(renderNow));
       if(overlay_)renderer_.settings(settings_,settingRow_);
+      if(jumpOpen_)renderer_.pageChooser(jumpPage_,jumpCount_);
     }
     if(!error_.empty())renderer_.message(error_);
     renderer_.finish();

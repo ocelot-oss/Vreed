@@ -8,7 +8,8 @@ namespace vr {
 ReadingSettings loadSettings(const std::string& path) {
   std::string data; if(!readFile(path,data)&&!readFile(path+".bak",data))return {};
   ReadingSettings s; std::istringstream in(data); std::string version; int mode,layout,book,clean,oled,sound;
-  if(!(in>>version)||version!="VRS1"||!(in>>mode>>layout>>s.fontSize>>s.lineSpacing>>s.margins>>book>>clean>>oled>>sound>>s.soundVolume))return {};
+  if(!(in>>version)||(version!="VRS1"&&version!="VRS2")||!(in>>mode>>layout>>s.fontSize>>s.lineSpacing>>s.margins>>book>>clean>>oled>>sound>>s.soundVolume))return {};
+  if(version=="VRS2") { int capture; if(!(in>>s.fontFamily>>capture)||(capture!=0&&capture!=1))return {}; s.bookmarkScreenshot=capture!=0; }
   s.mode=static_cast<ReadingMode>(mode); s.bookLayout=static_cast<BookLayout>(layout);
   s.animation={static_cast<TransitionKind>(book),static_cast<TransitionKind>(clean),static_cast<TransitionKind>(oled)};
   s.pageSound=sound!=0;
@@ -20,8 +21,8 @@ bool saveSettings(const std::string& path,const ReadingSettings& s) {
   if(!validSettings(s))return false;
   const auto temp=path+".tmp";
   { std::ostringstream out;
-    out<<"VRS1\n"<<static_cast<int>(s.mode)<<' '<<static_cast<int>(s.bookLayout)<<' '<<s.fontSize<<' '<<s.lineSpacing<<' '<<s.margins<<' '
-       <<static_cast<int>(s.animation[0])<<' '<<static_cast<int>(s.animation[1])<<' '<<static_cast<int>(s.animation[2])<<' '<<s.pageSound<<' '<<s.soundVolume<<'\n';
+    out<<"VRS2\n"<<static_cast<int>(s.mode)<<' '<<static_cast<int>(s.bookLayout)<<' '<<s.fontSize<<' '<<s.lineSpacing<<' '<<s.margins<<' '
+       <<static_cast<int>(s.animation[0])<<' '<<static_cast<int>(s.animation[1])<<' '<<static_cast<int>(s.animation[2])<<' '<<s.pageSound<<' '<<s.soundVolume<<' '<<s.fontFamily<<' '<<s.bookmarkScreenshot<<'\n';
     if(!writeFile(temp,out.str()))return false;
   }
   return replaceFile(temp,path);

@@ -4,6 +4,7 @@
 #include "storage/settings.hpp"
 #include "audio/events.hpp"
 #include "audio/stereo_mixer.hpp"
+#include "input/triggers.hpp"
 #include <cassert>
 #include <cmath>
 #include <cstdio>
@@ -14,6 +15,19 @@
 #include "rendering/typography.hpp"
 using namespace vr;
 int main(int argc,char** argv) {
+  {
+    TriggerChord chord;
+    assert(!chord.update(true,false,0).previous);
+    auto both=chord.update(true,true,40); assert(both.jump&&!both.previous&&!both.next);
+    assert(!chord.update(true,true,500).jump);
+    auto release=chord.update(false,true,550); assert(!release.next&&!release.previous);
+    chord.update(false,false,600);
+    assert(!chord.update(false,true,700).next);
+    assert(chord.update(false,true,800).next);
+    assert(chord.update(false,true,1050).next);
+    chord.update(false,false,1200);
+    chord.update(true,false,1300); assert(chord.update(false,false,1320).previous);
+  }
   {
     StereoMixer mixer;
     std::vector<std::int16_t> recording(24000),effects(12000,0),output(24000);
@@ -86,10 +100,16 @@ int main(int argc,char** argv) {
   assert(animationFor(settings)==TransitionKind::Curl);
   settings.animation[0]=TransitionKind::None; settings.pageSound=false; settings.soundVolume=3;
   settings.mode=ReadingMode::Oled; settings.fontSize=2;
+  assert(!ReadingSettings{}.bookmarkScreenshot);
+  settings.fontFamily=2; settings.bookmarkScreenshot=true;
   assert(saveSettings(file,settings)); auto loaded=loadSettings(file);
   assert(loaded.mode==settings.mode&&loaded.animation[0]==TransitionKind::None&&!loaded.pageSound&&loaded.soundVolume==3&&loaded.fontSize==2);
+  assert(loaded.fontFamily==2&&loaded.bookmarkScreenshot);
   settings.pageSound=true; settings.soundVolume=0; assert(saveSettings(file,settings));
   assert(loadSettings(file).pageSound&&loadSettings(file).soundVolume==0);
+  { std::ofstream legacy(file); legacy<<"VRS1\n1 0 2 1 1 2 1 1 0 2\n"; }
+  auto legacy=loadSettings(file);
+  assert(legacy.mode==ReadingMode::Clean&&legacy.fontSize==2&&legacy.soundVolume==2&&!legacy.pageSound&&!legacy.bookmarkScreenshot&&legacy.fontFamily==0);
   { std::ofstream bad(file); bad<<"VRS1\n99 0 1 1 1 2 1 1 1 1\n"; }
   assert(loadSettings(file).mode==ReadingMode::Book);
   std::remove(file.c_str());

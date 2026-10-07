@@ -25,6 +25,8 @@ private:
   Session::VisiblePage candidateSecond_;
   bool refreshPages_=true;
   bool overlay_=false;
+  bool jumpOpen_=false;
+  std::size_t jumpPage_=0,jumpCount_=1;
   int settingRow_=0;
   struct TemporaryBookmark { bool set=false; std::size_t chapter=0,offset=0; } bookmark_;
   bool bookmarked() const;

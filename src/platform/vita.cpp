@@ -22,7 +22,7 @@ Input Vita::poll() {
     if(pad.lx<64)bits|=SCE_CTRL_LEFT; if(pad.lx>192)bits|=SCE_CTRL_RIGHT;
   }
   auto edge=bits&~previous_; previous_=bits;
-  auto directions=bits&(SCE_CTRL_UP|SCE_CTRL_DOWN|SCE_CTRL_LEFT|SCE_CTRL_RIGHT|SCE_CTRL_LTRIGGER|SCE_CTRL_RTRIGGER);
+  auto directions=bits&(SCE_CTRL_UP|SCE_CTRL_DOWN|SCE_CTRL_LEFT|SCE_CTRL_RIGHT);
   auto now=sceKernelGetProcessTimeWide();
   if(directions!=held_) { held_=directions; repeatAt_=now+350000; }
   else if(directions&&now>=repeatAt_) { edge|=directions; repeatAt_=now+110000; }
@@ -38,7 +38,9 @@ Input Vita::poll() {
     if(received!=0)in.touch=touch_.sample(contacts.data(),count,valid);
   }
   in.up=edge&SCE_CTRL_UP; in.down=edge&SCE_CTRL_DOWN;
-  in.previous=edge&(SCE_CTRL_LEFT|SCE_CTRL_LTRIGGER); in.next=edge&(SCE_CTRL_RIGHT|SCE_CTRL_RTRIGGER);
+  const auto triggers=triggers_.update(bits&SCE_CTRL_LTRIGGER,bits&SCE_CTRL_RTRIGGER,in.nowMs);
+  in.jump=triggers.jump;
+  in.previous=(edge&SCE_CTRL_LEFT)||triggers.previous; in.next=(edge&SCE_CTRL_RIGHT)||triggers.next;
   in.open=edge&SCE_CTRL_CROSS; in.back=edge&SCE_CTRL_CIRCLE; in.rescan=edge&SCE_CTRL_TRIANGLE;
   in.quit=edge&SCE_CTRL_START; in.bookmark=edge&SCE_CTRL_SQUARE; return in;
 }
