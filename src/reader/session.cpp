@@ -1,6 +1,7 @@
 #include "reader/session.hpp"
 #include <algorithm>
 #include <limits>
+#include <stdexcept>
 namespace vr {
 std::shared_ptr<const Session::ChapterPages> Session::load(std::size_t index,const Measure& measure) const {
   if(current_&&current_->index==index)return current_;
