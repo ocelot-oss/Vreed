@@ -1,5 +1,13 @@
 # Validation gate
 
+## PDF rendering, font atlas and library logo — version 00.09
+
+[Run 37696077344](https://github.com/ocelot-oss/Vreed/actions/runs/37696077344) passed six portable suites and native Vita packaging for `84b375d4509b76a4fcbcc27640922f6aba14db88`. The PDF suite renders distinct colored physical pages with the actual pinned MuPDF engine and checks spreads, page selection, bounds, backward navigation and stable page counts after setting changes. UTC conversion tests cover the Unix epoch, earlier dates and Gregorian leap years. Vita uses a tested UTC compatibility function and the SDK's FreeType/JPEG/zlib libraries.
+
+The downloaded 32587164-byte VPK passed SHA-256, ZIP integrity, SFO title/version/retained title ID, packaged branding/font assets, AGPL/MIT notices and non-silent stereo music checks. The 1254×1254 library logo has genuine alpha transparency. The 65393952-byte corresponding-source archive contains the pinned MuPDF revision and its dependencies; application sources and build recipes were compared byte-for-byte against the build commit, avoiding Windows working-tree line-ending differences.
+
+Hardware review is still required for Sans glyph appearance at multiple sizes, library header layout, PDF readability, panning, memory usage and loading latency. See [device checks](DEVICE_REVIEW_6.md). Tests and packaging do not establish those outcomes on an actual Vita.
+
 ## Fonts, whole-book picker and moving poses — version 00.08
 
 [Run 37604336833](https://github.com/ocelot-oss/Vreed/actions/runs/37604336833) passed all four portable suites and native Vita packaging for `5bd7c1e2321eecf61a726b84314433ab6481be88`. Regressions cover trigger chords/taps/repeats, whole-book navigation and bounds, reflow count invalidation, VRS1 compatibility and VRS2 persistence including font/capture preferences. The downloaded 29685082-byte VPK passed SHA-256 verification. The generated 2172×724 RGBA pose atlas has genuine transparent/opaque pixels. Hardware review remains necessary for custom font appearance/metrics, first-use page indexing latency, chooser controls and moving-background frame pacing. See [device checks](DEVICE_REVIEW_5.md) and [asset generation prompt](../assets/branding/MASCOT_POSES.md).
