@@ -24,6 +24,10 @@ jobs:
           sudo apt-get install -y cmake g++ libarchive-dev libexpat1-dev ffmpeg
       - name: Prepare library music
         run: ffmpeg -nostdin -v error -i assets/audio/library.mp3 -ac 2 -ar 48000 -f s16le assets/audio/library-stereo.pcm
+      - uses: actions/cache@v4
+        with:
+          path: .deps/mupdf
+          key: mupdf-host-1.28.5-${{ hashFiles('tools/build_mupdf.sh') }}
       - uses: actions/upload-artifact@v4
         with:
           name: Library-PCM
@@ -53,6 +57,10 @@ jobs:
           arm-vita-eabi-g++ --version
           cmake --version
           vdpm status
+      - uses: actions/cache@v4
+        with:
+          path: .deps/mupdf
+          key: mupdf-vita-2026.08-1.28.5-${{ hashFiles('tools/build_mupdf.sh') }}
       - uses: actions/download-artifact@v4
         with:
           name: Library-PCM

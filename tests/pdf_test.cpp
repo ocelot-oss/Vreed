@@ -1,5 +1,6 @@
 #include "pdf/pdf.hpp"
 #include "epub/epub.hpp"
+#include "reader/session.hpp"
 #include <fstream>
 #include <iostream>
 #include <stdexcept>
@@ -29,6 +30,19 @@ int main(int argc,char** argv) {
   require(static_cast<unsigned char>(blue->bytes[center+2])>240,"blue page");
   vr::Epub book; book.open(argv[1]); require(book.isPdf()&&book.spine.size()==2,"PDF book integration");
   require(book.chapter(1).blocks.size()==1,"PDF page integration");
+  vr::Book item; item.path=argv[1]; item.format=vr::Book::Format::Pdf;
+  vr::Session session;
+  auto measure=[](const std::string& text,float){return int(text.size())*10;};
+  session.open(item,measure);
+  require(session.pageCount()==1&&session.chapterCount()==2,"one physical PDF page per chapter");
+  require(session.totalPageCount(measure)==2,"physical PDF page indexing");
+  auto right=session.secondPage(measure);
+  require(right.page&&right.position.chapter==1,"two-page PDF spread");
+  require(session.goToPage(1,measure)&&session.position.chapter==1,"PDF page chooser");
+  require(!session.turn(1,measure),"PDF end bound");
+  require(session.turn(-1,measure)&&session.position.chapter==0,"PDF backward turn");
+  session.repaginate(vr::Layout{400,390,30,1.0f},measure);
+  require(session.totalPageCount(measure)==2,"PDF count survives settings change");
   bool rejected=false; try {document.page(2);}catch(const std::exception&){rejected=true;}
   require(rejected,"invalid page rejected");
   std::cout<<"MuPDF PDF raster and integration passed\n";

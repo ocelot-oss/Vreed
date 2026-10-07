@@ -55,4 +55,4 @@ Optional quiet paper sounds use original procedural placeholder samples and a de
 
 See [milestone-3 implementation and test notes](docs/MILESTONE_3.md), [milestone-2 notes](docs/MILESTONE_2.md) and [remaining work](TODO.md).
 
-PDF, highlighting, annotations, search and cover thumbnails remain deferred. Native font quality, French glyph coverage and scene performance still need real Vita validation.
+Highlighting, annotations, search and cover thumbnails remain deferred. Native font quality, French glyph coverage and scene performance still need real Vita validation.
