@@ -2,12 +2,15 @@ cmake_minimum_required(VERSION 3.16)
 option(VITAREADER_HOST_TESTS "Build portable core tests instead of the Vita application" OFF)
 set(VREED_MUPDF_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/.deps/mupdf" CACHE PATH "Pinned MuPDF source directory")
 if(VITAREADER_HOST_TESTS)
-  project(VitaReaderCoreTests LANGUAGES CXX)
+  project(VitaReaderCoreTests LANGUAGES C CXX)
   set(CMAKE_CXX_STANDARD 17)
   set(CMAKE_CXX_STANDARD_REQUIRED ON)
   option(VITAREADER_EPUB_TESTS "Include tests requiring libarchive and Expat" ON)
   option(VREED_PDF_TESTS "Test the actual MuPDF renderer" OFF)
   enable_testing()
+  add_executable(pdf_date_test tests/pdf_date_test.cpp src/platform/mupdf_compat.c)
+  target_include_directories(pdf_date_test PRIVATE src)
+  add_test(NAME pdf_date COMMAND pdf_date_test)
   add_executable(layout_test tests/layout_test.cpp src/reader/layout.cpp src/reader/settings.cpp src/reader/transition.cpp src/rendering/page_style.cpp)
   target_include_directories(layout_test PRIVATE src)
   add_test(NAME layout COMMAND layout_test)
@@ -69,10 +72,10 @@ target_sources(VitaReader PRIVATE src/reader/transition.cpp src/reader/turn_tran
   src/input/touch.cpp src/storage/settings.cpp src/audio/events.cpp src/platform/vita_audio.cpp)
 target_include_directories(VitaReader PRIVATE src)
 target_sources(VitaReader PRIVATE third_party/libvita2d-font/vita2d_font.c third_party/libvita2d-font/texture_atlas.c)
-target_include_directories(VitaReader PRIVATE third_party/libvita2d-font)
+target_include_directories(VitaReader PRIVATE third_party/libvita2d-font "$ENV{VITASDK}/arm-vita-eabi/include/freetype2")
 target_compile_definitions(VitaReader PRIVATE VITAREADER_VITA=1)
 target_compile_definitions(VitaReader PRIVATE VITAREADER_PDF=1)
-target_sources(VitaReader PRIVATE src/pdf/pdf.cpp)
+target_sources(VitaReader PRIVATE src/pdf/pdf.cpp src/platform/mupdf_compat.c)
 target_include_directories(VitaReader PRIVATE "${VREED_MUPDF_ROOT}/include")
 target_link_libraries(VitaReader "${VREED_MUPDF_ROOT}/build/vita/libmupdf.a" "${VREED_MUPDF_ROOT}/build/vita/libmupdf-third.a")
 target_compile_options(VitaReader PRIVATE -Wall -Wextra -Wpedantic)
@@ -101,6 +104,7 @@ vita_create_vpk(${VITAREADER_NAME}.vpk ${VITAREADER_TITLE_ID} eboot.bin
   FILE assets/branding/library-logo.png assets/branding/library-logo.png
   FILE LICENSE assets/licenses/AGPL-3.0.txt
   FILE THIRD_PARTY_NOTICES.md assets/licenses/THIRD_PARTY_NOTICES.md
+  FILE third_party/libvita2d-font/LICENSE assets/licenses/libvita2d-MIT.txt
   FILE assets/branding/mascot-poses.png assets/branding/mascot-poses.png
   FILE assets/fonts/DejaVuSerif.ttf assets/fonts/DejaVuSerif.ttf
   FILE assets/fonts/DejaVuSans.ttf assets/fonts/DejaVuSans.ttf

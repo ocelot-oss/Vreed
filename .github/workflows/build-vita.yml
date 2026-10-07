@@ -36,7 +36,7 @@ jobs:
         run: |
           sh tools/build_mupdf.sh host
           cmake -S . -B build-host -DVITAREADER_HOST_TESTS=ON -DVREED_PDF_TESTS=ON -DCMAKE_BUILD_TYPE=Release
-          cmake --build build-host --target layout_test session_test interaction_test epub_test pdf_test --parallel 2
+          cmake --build build-host --target layout_test session_test interaction_test epub_test pdf_test pdf_date_test --parallel 2
       - name: Run tests
         run: ctest --test-dir build-host --output-on-failure
 
@@ -57,7 +57,8 @@ jobs:
           arm-vita-eabi-g++ --version
           cmake --version
           vdpm status
-      - uses: actions/cache@v4
+      - uses: actions/cache/restore@v4
+        id: mupdf-vita-cache
         with:
           path: .deps/mupdf
           key: mupdf-vita-2026.08-1.28.5-${{ hashFiles('tools/build_mupdf.sh') }}
@@ -65,10 +66,15 @@ jobs:
         with:
           name: Library-PCM
           path: assets/audio
+      - name: Build Vita PDF engine
+        run: sh tools/build_mupdf.sh vita
+      - uses: actions/cache/save@v4
+        if: steps.mupdf-vita-cache.outputs.cache-hit != 'true'
+        with:
+          path: .deps/mupdf
+          key: mupdf-vita-2026.08-1.28.5-${{ hashFiles('tools/build_mupdf.sh') }}
       - name: Configure Vita release
-        run: |
-          sh tools/build_mupdf.sh vita
-          cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
       - name: Build VPK
         run: cmake --build build --parallel 2
       - name: Check package
