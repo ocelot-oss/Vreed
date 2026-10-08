@@ -6,5 +6,6 @@ struct Input {
   TouchPoint touch;
   double nowMs=0;
   bool jump=false;
+  bool left=false,right=false,triggerPrevious=false,triggerNext=false;
 };
 }

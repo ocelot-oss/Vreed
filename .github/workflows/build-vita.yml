@@ -36,7 +36,7 @@ jobs:
         run: |
           sh tools/build_mupdf.sh host
           cmake -S . -B build-host -DVITAREADER_HOST_TESTS=ON -DVREED_PDF_TESTS=ON -DCMAKE_BUILD_TYPE=Release
-          cmake --build build-host --target layout_test session_test interaction_test epub_test pdf_test pdf_date_test --parallel 2
+          cmake --build build-host --target layout_test session_test interaction_test epub_test pdf_test pdf_date_test orientation_test --parallel 2
       - name: Run tests
         run: ctest --test-dir build-host --output-on-failure
 

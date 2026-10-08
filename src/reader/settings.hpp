@@ -6,12 +6,14 @@
 namespace vr {
 enum class ReadingMode { Book, Clean, Oled };
 enum class BookLayout { Single, Spread };
+enum class Orientation { Horizontal, VerticalRight, VerticalLeft };
 struct ReadingSettings {
   ReadingMode mode=ReadingMode::Book;
   BookLayout bookLayout=BookLayout::Single;
   int fontSize=1, lineSpacing=1, margins=1;
   int fontFamily=0; // System, DejaVu Serif, Sans, Mono.
   bool bookmarkScreenshot=false;
+  Orientation orientation=Orientation::Horizontal;
   std::array<TransitionKind,3> animation{TransitionKind::Curl,TransitionKind::Slide,TransitionKind::Slide};
   bool pageSound=true;
   int soundVolume=1; // 0..3: quiet levels 0%, 25%, 50%, 75% of the already subdued placeholder.
@@ -22,6 +24,8 @@ struct ReadingTheme {
   bool physical=false,texture=false;
 };
 struct Presentation {
+  Orientation orientation=Orientation::Horizontal;
+  int width=960,height=544;
   ReadingTheme theme;
   std::array<Rect,2> paper{},content{};
   int pageCount=1;
@@ -33,7 +37,7 @@ Presentation presentation(const ReadingSettings& settings,const HeightMeasure& h
 const char* modeName(ReadingMode mode);
 bool adjustSetting(ReadingSettings& settings,int row,int direction);
 std::string settingValue(const ReadingSettings& settings,int row);
-constexpr int settingsRowCount=10;
+constexpr int settingsRowCount=11;
 TransitionKind animationFor(const ReadingSettings& settings);
 bool validSettings(const ReadingSettings& settings);
 }

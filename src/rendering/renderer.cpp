@@ -1,3 +1,4 @@
+#include "reader/orientation.hpp"
 #include "rendering/renderer.hpp"
 #include "app/identity.hpp"
 #include "rendering/typography.hpp"
@@ -13,10 +14,12 @@
 #include <set>
 #include <cstring>
 #include <psp2/sysmodule.h>
+extern "C" { extern float _vita2d_ortho_matrix[16]; }
 namespace vr {
 Renderer::Renderer() {
   if(sceSysmoduleLoadModule(SCE_SYSMODULE_PGF)<0)throw std::runtime_error("PGF module unavailable");
   if(vita2d_init()<0) { sceSysmoduleUnloadModule(SCE_SYSMODULE_PGF); throw std::runtime_error("Graphics initialization failed"); }
+  std::memcpy(landscapeProjection_,_vita2d_ortho_matrix,sizeof(landscapeProjection_));
   font_=vita2d_load_default_pgf();
   if(!font_) { vita2d_fini(); sceSysmoduleUnloadModule(SCE_SYSMODULE_PGF); throw std::runtime_error("System font unavailable"); }
   logo_=vita2d_load_PNG_file("app0:/assets/branding/library-logo.png");
@@ -126,7 +129,36 @@ std::string Renderer::fit(const std::string& s,int width,float scale) const {
   if(measure(s,scale)<=width)return s; std::string out=s;
   while(!out.empty()&&measure(out+"...",scale)>width) { auto i=out.size()-1; while(i>0&&(static_cast<unsigned char>(out[i])&0xc0)==0x80)--i; out.resize(i); } return out+"...";
 }
-void Renderer::begin(bool reading) { reading_=reading; vita2d_set_clear_color(reading?presentation_.theme.background:RGBA8(15,20,25,255)); vita2d_start_drawing(); vita2d_clear_screen(); }
+void Renderer::projection(Orientation orientation) {
+  std::memcpy(_vita2d_ortho_matrix,landscapeProjection_,sizeof(landscapeProjection_));
+  if(orientation==Orientation::Horizontal)return;
+  const float sign=orientation==Orientation::VerticalRight?1.0f:-1.0f;
+  _vita2d_ortho_matrix[0]=0; _vita2d_ortho_matrix[5]=0;
+  _vita2d_ortho_matrix[4]=-sign*2/960; _vita2d_ortho_matrix[1]=-sign*2/544;
+  _vita2d_ortho_matrix[12]=sign; _vita2d_ortho_matrix[13]=sign;
+}
+void Renderer::drawScene(vita2d_texture* texture,float offset,unsigned color) {
+  if(presentation_.orientation==Orientation::VerticalRight)
+    vita2d_draw_texture_tint_scale_rotate_hotspot(texture,offset,960,1,1,-1.5707963268f,0,0,color);
+  else if(presentation_.orientation==Orientation::VerticalLeft)
+    vita2d_draw_texture_tint_scale_rotate_hotspot(texture,544+offset,0,1,1,1.5707963268f,0,0,color);
+  else vita2d_draw_texture_tint(texture,offset,0,color);
+}
+void Renderer::clip(const Rect& area) {
+  // vita2d's stencil reset is fixed at 960x544. Clear the entire logical
+  // viewport first so portrait clipping cannot retain stale lower-page pixels.
+  vita2d_disable_clipping();
+  sceGxmSetFrontStencilFunc(vita2d_get_context(),SCE_GXM_STENCIL_FUNC_NEVER,
+    SCE_GXM_STENCIL_OP_ZERO,SCE_GXM_STENCIL_OP_ZERO,SCE_GXM_STENCIL_OP_ZERO,0xFF,0xFF);
+  vita2d_draw_rectangle(0,0,presentation_.width,presentation_.height,0);
+  vita2d_set_clip_rectangle(area.x,area.y,area.x+area.width,area.y+area.height);
+  vita2d_enable_clipping();
+}
+void Renderer::begin(bool reading) {
+  reading_=reading; projection(reading?presentation_.orientation:Orientation::Horizontal);
+  vita2d_set_clear_color(reading?presentation_.theme.background:RGBA8(15,20,25,255));
+  vita2d_start_drawing(); vita2d_clear_screen();
+}
 void Renderer::finish() { vita2d_end_drawing(); vita2d_swap_buffers(); }
 void Renderer::library(const std::vector<Book>& books,std::size_t selected,double nowMs) {
   libraryTime_=nowMs;
@@ -182,8 +214,7 @@ void Renderer::library(const std::vector<Book>& books,std::size_t selected,doubl
 void Renderer::drawPage(const Page& page,int index,Position position,std::size_t count,std::size_t chapters) {
   const auto area=presentation_.content[index];
   // Each page clips to its own rectangle; glyph bearings cannot enter the gutter.
-  vita2d_set_clip_rectangle(area.x,area.y,area.x+area.width,area.y+area.height);
-  vita2d_enable_clipping();
+  clip(area);
   for(const auto& line:page.lines)readingLine(line,area.width,
     [&](const std::string& s,float scale){return measure(s,scale);},
     [&](int x,const std::string& s){text(area.x+x,area.y+line.y,s,line.scale,presentation_.theme.text);});
@@ -209,8 +240,8 @@ void Renderer::drawPage(const Page& page,int index,Position position,std::size_t
   else label="Chapitre "+std::to_string(position.chapter+1)+" / "+std::to_string(chapters)+"   ·   "+label;
   const auto paper=presentation_.paper[index];
   const int width=measure(label,0.8f);
-  const int x=presentation_.pageCount==2?(index==0?area.x:area.x+area.width-width):(960-width)/2;
-  text(x,presentation_.theme.physical?paper.y+paper.height-24:510,label,0.8f,presentation_.theme.secondary);
+  const int x=presentation_.pageCount==2?(index==0?area.x:area.x+area.width-width):(presentation_.width-width)/2;
+  text(x,presentation_.theme.physical?paper.y+paper.height-24:presentation_.height-34,label,0.8f,presentation_.theme.secondary);
 }
 bool Renderer::captureOpening(const std::vector<Book>& books,std::size_t selected,Session& session,const Session::VisiblePage& second) {
   vita2d_wait_rendering_done(); if(!ensureSurfaces())return false;
@@ -218,29 +249,32 @@ bool Renderer::captureOpening(const std::vector<Book>& books,std::size_t selecte
   unsigned seed=2166136261u; for(unsigned char c:openingTitle_)seed=(seed^c)*16777619u;
   const unsigned palette[]={RGBA8(77,109,103,255u),RGBA8(139,72,59,255u),RGBA8(119,97,142,255u),RGBA8(154,121,61,255u),RGBA8(61,86,121,255u),RGBA8(114,91,76,255u)};
   openingCover_=palette[seed%6];
+  projection(Orientation::Horizontal);
   vita2d_start_drawing_advanced(source_,0); vita2d_set_clear_color(RGBA8(24,21,21,255)); vita2d_clear_screen();
   library(books,selected,libraryTime_); vita2d_end_drawing(); vita2d_wait_rendering_done();
   capture(destination_,books[selected],session,second); return true;
 }
 void Renderer::opening(float progress,std::size_t selected) {
   const float t=std::clamp(progress,0.0f,1.0f);
-  vita2d_draw_texture(source_,0,0);
+  drawScene(source_);
   const int slot=int(selected%20),row=slot/10;
-  const float sx=48+(slot%10)*87,sh=148+int((selected*17)%35),sy=260+row*208-sh;
+  float sx=48+(slot%10)*87,sh=148+int((selected*17)%35),sy=260+row*208-sh,sw=74;
+  if(presentation_.orientation==Orientation::VerticalRight) { const float oldX=sx; sx=sy; sy=960-oldX-sw; std::swap(sw,sh); }
+  else if(presentation_.orientation==Orientation::VerticalLeft) { const float oldX=sx; sx=544-sy-sh; sy=oldX; std::swap(sw,sh); }
   const float lift=smoothStep(std::min(1.0f,t/0.4f)),unfold=smoothStep(std::max(0.0f,(t-0.25f)/0.75f));
   const auto left=presentation_.paper[0],right=presentation_.paper[presentation_.pageCount-1];
   const float width=right.x+right.width-left.x,height=left.height;
-  const float x=sx+(left.x-sx)*lift,y=sy+(left.y-sy)*lift,w=74+(width-74)*lift,h=sh+(height-sh)*lift;
-  vita2d_draw_rectangle(0,0,960,544,RGBA8(0,0,0,int(170*unfold)));
+  const float x=sx+(left.x-sx)*lift,y=sy+(left.y-sy)*lift,w=sw+(width-sw)*lift,h=sh+(height-sh)*lift;
+  vita2d_draw_rectangle(0,0,presentation_.width,presentation_.height,RGBA8(0,0,0,int(170*unfold)));
   vita2d_draw_rectangle(x+7,y+10,w,h,RGBA8(0,0,0,int(90*(1-t))));
-  vita2d_set_clip_rectangle(int(x),int(y),int(x+w),int(y+h)); vita2d_enable_clipping();
-  vita2d_draw_texture(destination_,0,0); vita2d_disable_clipping();
+  clip({int(x),int(y),int(w),int(h)});
+  drawScene(destination_); vita2d_disable_clipping();
   const float cover=w*(1-unfold);
   vita2d_draw_rectangle(x,y,cover,h,openingCover_);
   vita2d_draw_rectangle(x+3,y,2,h,RGBA8(224,208,164,int(120*(1-unfold))));
   if(cover>55)text(int(x+12),int(y+45),fit(openingTitle_,int(cover)-24,0.85f),0.85f,RGBA8(245,229,197,255));
   if(cover>1)vita2d_draw_rectangle(x+cover,y,6,h,RGBA8(0,0,0,int(80*(1-unfold))));
-  if(t>0.75f)vita2d_draw_texture_tint(destination_,0,0,RGBA8(255,255,255,int(smoothStep((t-0.75f)/0.25f)*255)));
+  if(t>0.75f)drawScene(destination_,0,RGBA8(255,255,255,int(255*smoothStep((t-0.75f)/0.25f))));
 }
 void Renderer::reader(const Book& book,const Page& page,Position p,std::size_t count,std::size_t chapters,const Session::VisiblePage& second,float ribbon) {
   pdfMaxPan_=0;
@@ -254,7 +288,7 @@ void Renderer::reader(const Book& book,const Page& page,Position p,std::size_t c
   drawPage(page,0,p,count,chapters);
   if(presentation_.pageCount==2&&second.page)drawPage(*second.page,1,second.position,second.count,chapters);
   drawRibbon(ribbon);
-  if(book.format==Book::Format::Pdf)text(24,538,"X : page / largeur · Haut / bas : déplacer",0.65f,presentation_.theme.secondary);
+  if(book.format==Book::Format::Pdf)text(24,presentation_.height-6,"X : page / largeur · Haut / bas : déplacer",0.65f,presentation_.theme.secondary);
 }
 void Renderer::panPdf(int direction) { pdfPan_=std::clamp(pdfPan_+direction*64.0f,0.0f,pdfMaxPan_); }
 void Renderer::drawRibbon(float amount) {
@@ -273,12 +307,24 @@ bool Renderer::saveScreenshot(const Book& book,Session& session,const Session::V
   vita2d_wait_rendering_done();
   if(!ensureSurfaces()) { storageFailure="capture : mémoire graphique indisponible"; return false; }
   vita2d_set_clear_color(presentation_.theme.background);
+  projection(presentation_.orientation);
   vita2d_start_drawing_advanced(source_,0); vita2d_clear_screen();
   reader(book,session.page(),session.position,session.pageCount(),session.chapterCount(),second,1);
   vita2d_end_drawing(); vita2d_wait_rendering_done();
-  png_image image{}; image.version=PNG_IMAGE_VERSION; image.width=960; image.height=544; image.format=PNG_FORMAT_RGBA;
-  const auto* pixels=vita2d_texture_get_datap(source_);
-  const auto stride=vita2d_texture_get_stride(source_);
+  png_image image{}; image.version=PNG_IMAGE_VERSION; image.width=presentation_.width; image.height=presentation_.height; image.format=PNG_FORMAT_RGBA;
+  const void* pixels=vita2d_texture_get_datap(source_);
+  int stride=vita2d_texture_get_stride(source_);
+  std::vector<unsigned char> upright;
+  if(presentation_.orientation!=Orientation::Horizontal) {
+    upright.resize(544*960*4);
+    const auto* source=static_cast<const unsigned char*>(pixels);
+    for(int y=0;y<960;++y)for(int x=0;x<544;++x) {
+      const int sx=presentation_.orientation==Orientation::VerticalRight?959-y:y;
+      const int sy=presentation_.orientation==Orientation::VerticalRight?x:543-x;
+      std::memcpy(upright.data()+(y*544+x)*4,source+sy*stride+sx*4,4);
+    }
+    pixels=upright.data(); stride=544*4;
+  }
   png_alloc_size_t size=0;
   if(!png_image_write_to_memory(&image,nullptr,&size,0,pixels,stride,nullptr)) {
     storageFailure="PNG : "+std::string(image.message); png_image_free(&image); return false;
@@ -323,6 +369,7 @@ bool Renderer::ensureSurfaces() {
 }
 void Renderer::capture(vita2d_texture* target,const Book& book,Session& session,const Session::VisiblePage& second) {
   vita2d_set_clear_color(presentation_.theme.background);
+  projection(presentation_.orientation);
   vita2d_start_drawing_advanced(target,0); vita2d_clear_screen();
   reader(book,session.page(),session.position,session.pageCount(),session.chapterCount(),second,-1);
   vita2d_end_drawing(); vita2d_wait_rendering_done();
@@ -339,12 +386,12 @@ void Renderer::transition(const PageTransition& motion) {
   if(!source_||!destination_)return;
   const float progress=motion.progress(); const int direction=motion.direction();
   if(motion.kind()==TransitionKind::Slide) {
-    vita2d_draw_texture(source_,-direction*progress*960,0);
-    vita2d_draw_texture(destination_,direction*(1-progress)*960,0); return;
+    drawScene(source_,-direction*progress*presentation_.width);
+    drawScene(destination_,direction*(1-progress)*presentation_.width); return;
   }
-  if(motion.kind()!=TransitionKind::Curl) { vita2d_draw_texture(source_,0,0); return; }
+  if(motion.kind()!=TransitionKind::Curl) { drawScene(source_); return; }
   const float p=motion.state()==TurnState::Dragging?std::max(0.012f,progress):progress;
-  vita2d_draw_texture(destination_,0,0);
+  drawScene(destination_);
   if(presentation_.pageCount==2&&p<0.5f) {
     const auto stationary=presentation_.paper[direction>0?0:1];
     vita2d_draw_texture_part(source_,stationary.x,stationary.y,stationary.x,stationary.y,stationary.width,stationary.height);
@@ -375,43 +422,35 @@ void Renderer::transition(const PageTransition& motion) {
   vita2d_draw_line(edge[1].x,edge[1].y,edge[3].x,edge[3].y,RGBA8(255,246,219,int(120*geometry.shadowStrength)));
 }
 void Renderer::settings(const ReadingSettings& settings,int selected) {
-  const bool oled=settings.mode==ReadingMode::Oled;
-  const unsigned bg=oled?RGBA8(0,0,0,255):RGBA8(20,26,31,250);
-  const unsigned fg=oled?RGBA8(184,187,183,255):RGBA8(228,230,228,255);
-  const unsigned dim=oled?RGBA8(89,96,98,255):RGBA8(137,151,159,255);
-  const unsigned accent=oled?presentation_.theme.accent:
-    settings.mode==ReadingMode::Book?RGBA8(218,172,129,255):RGBA8(139,182,202,255);
-  vita2d_draw_rectangle(225,32,510,478,bg);
-  vita2d_draw_rectangle(225,32,510,1,dim);
-  text(249,68,"Lecture",1.2f,fg);
-  const char* labels[]={"Mode","Disposition","Taille de police","Interligne","Marges","Animation","Son de page","Volume","Police","Capture sur signet"};
+  const unsigned bg=settings.mode==ReadingMode::Oled?RGBA8(0,0,0,255):RGBA8(20,26,31,250),fg=RGBA8(228,230,228,255),dim=RGBA8(137,151,159,255);
+  const int w=std::min(510,presentation_.width-32),x=(presentation_.width-w)/2,y=(presentation_.height-512)/2;
+  vita2d_draw_rectangle(x,y,w,512,bg); text(x+24,y+36,"Lecture",1.2f,fg);
+  const char* labels[]={"Mode","Disposition","Taille de police","Interligne","Marges","Animation","Son de page","Volume","Police","Capture sur signet","Orientation"};
   for(int row=0;row<settingsRowCount;++row) {
-    const int y=85+row*34;
-    if(row==selected) {
-      if(!oled)vita2d_draw_rectangle(237,y-3,486,30,RGBA8(36,48,56,255));
-      vita2d_draw_rectangle(238,y+3,2,21,accent);
-    }
-    text(250,y+20,labels[row],0.85f,row==1&&settings.mode!=ReadingMode::Book?dim:fg);
+    const int line=y+53+row*34;
+    if(row==selected)vita2d_draw_rectangle(x+12,line-3,w-24,30,RGBA8(36,48,56,255));
+    text(x+24,line+20,labels[row],0.85f,fg);
     const auto value=settingValue(settings,row);
-    text(710-measure(value,0.85f),y+20,value,0.85f,row==selected?accent:dim);
+    text(x+w-25-measure(value,0.85f),line+20,value,0.85f,dim);
   }
-  text(249,466,presentation_.spreadLimited?"Grande police : une page pour rester lisible":"Gauche / droite : modifier",0.75f,dim);
-  text(249,492,"O ou Triangle : fermer",0.75f,dim);
+  text(x+24,y+454,presentation_.spreadLimited?"Une page pour rester lisible":"Gauche / droite : modifier",0.75f,dim);
+  text(x+24,y+480,"O ou Triangle : fermer",0.75f,dim);
 }
 void Renderer::pageChooser(std::size_t page,std::size_t count) {
-  const auto fg=presentation_.theme.text;
-  vita2d_draw_rectangle(190,145,580,250,presentation_.theme.paper);
-  text(220,183,"Aller à une page du livre",1.05f,fg);
-  text(220,227,std::to_string(page+1)+" / "+std::to_string(count),1.4f,fg);
-  vita2d_draw_rectangle(250,270,460,4,presentation_.theme.secondary);
-  const float x=250+(count>1?460.0f*page/(count-1):0);
-  vita2d_draw_fill_circle(x,272,9,presentation_.theme.accent);
-  text(220,323,"Gauche / droite : 1 · Haut / bas : 10",0.8f,fg);
-  text(220,353,"Toucher la barre · X Valider · O Annuler",0.75f,fg);
+  const auto fg=presentation_.theme.text; const auto track=pageChooserTrack(presentation_);
+  const int x=track.x-60,y=track.y-125,w=track.width+120;
+  vita2d_draw_rectangle(x,y,w,250,presentation_.theme.paper);
+  text(x+30,y+38,"Aller à une page du livre",1.05f,fg);
+  text(x+30,y+82,std::to_string(page+1)+" / "+std::to_string(count),1.4f,fg);
+  vita2d_draw_rectangle(track.x,track.y,track.width,4,presentation_.theme.secondary);
+  const float thumb=track.x+(count>1?float(track.width)*page/(count-1):0);
+  vita2d_draw_fill_circle(thumb,track.y+2,9,presentation_.theme.accent);
+  text(x+30,y+178,"Gauche / droite : 1 · Haut / bas : 10",0.7f,fg);
+  text(x+30,y+208,"Toucher la barre · X Valider · O Annuler",0.7f,fg);
 }
 void Renderer::message(const std::string& s) {
   const bool oled=reading_&&presentation_.theme.background==RGBA8(0,0,0,255);
-  vita2d_draw_rectangle(24,458,912,38,oled?RGBA8(0,0,0,255):RGBA8(108,39,39,255));
-  text(40,483,fit(s,870,0.85f),0.85f,oled?RGBA8(154,110,106,255):RGBA8(232,232,232,255));
+  vita2d_draw_rectangle(24,(reading_?presentation_.height:544)-86,(reading_?presentation_.width:960)-48,38,oled?RGBA8(0,0,0,255):RGBA8(108,39,39,255));
+  text(40,(reading_?presentation_.height:544)-61,fit(s,(reading_?presentation_.width:960)-90,0.85f),0.85f,oled?RGBA8(154,110,106,255):RGBA8(232,232,232,255));
 }
 }

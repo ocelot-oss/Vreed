@@ -31,7 +31,7 @@ int pageEdge(const Presentation& p,const TouchPoint& touch) {
   if(touch.phase!=TouchPhase::Down)return 0;
   const auto left=p.paper[0],right=p.paper[p.pageCount-1];
   if(touch.y<left.y||touch.y>left.y+left.height)return 0;
-  if(touch.x>=right.x+right.width-std::max(96.0f,interaction::edgeZone)&&touch.x<=959)return 1;
+  if(touch.x>=right.x+right.width-std::max(96.0f,interaction::edgeZone)&&touch.x<=p.width-1)return 1;
   if(touch.x<=left.x+std::max(96.0f,interaction::edgeZone)&&touch.x>=0)return -1;
   return 0;
 }

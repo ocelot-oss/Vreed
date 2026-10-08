@@ -1,3 +1,4 @@
+#include "reader/orientation.hpp"
 #include "rendering/curl.hpp"
 #include <algorithm>
 #include <cmath>
@@ -20,7 +21,8 @@ CurlGeometry curlGeometry(const Presentation& p,int direction,float progress,flo
       const auto reverse=p.paper[1-index];
       u=direction>0?reverse.x+(1-s)*reverse.width:reverse.x+s*reverse.width;
     }
-    return CurlVertex{x,y,u/960.0f,(bottom?page.y+page.height:page.y)/544.0f};
+    const auto uv=screenPoint({u,float(bottom?page.y+page.height:page.y)},p.orientation);
+    return CurlVertex{x,y,uv.x/960.0f,uv.y/544.0f};
   };
   for(int i=0;i<interaction::curlSegments;++i) {
     auto& band=result.bands[i]; const float a=float(i)/interaction::curlSegments,b=float(i+1)/interaction::curlSegments;

@@ -37,6 +37,10 @@ public:
   void pageChooser(std::size_t page,std::size_t count);
   void message(const std::string& message);
 private:
+  float landscapeProjection_[16]{};
+  void projection(Orientation orientation);
+  void drawScene(vita2d_texture* texture,float offset=0,unsigned color=0xffffffff);
+  void clip(const Rect& area);
   bool pdfFitWidth_=false;
   float pdfPan_=0,pdfMaxPan_=0;
   struct ImageTexture { vita2d_texture* texture=nullptr; std::size_t bytes=0; };

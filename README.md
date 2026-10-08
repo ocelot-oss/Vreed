@@ -1,5 +1,7 @@
 # Vreed
 
+Version 00.10 adds portrait reading in either direction. While reading, press **Triangle → Orientation → Vertical droite / Vertical gauche**, then turn the Vita to match. EPUB text reflows into a 544×960 single page; PDFs keep their original layout and fit the portrait viewport. Touch gestures and directional controls rotate with the page, while L/R continue turning pages and L+R opens the page chooser. The setting persists across launches and the previous spread preference returns in horizontal mode. Optional bookmark captures are saved upright at 544×960 in portrait mode.
+
 Version 00.09 adds native PDF rendering through MuPDF (AGPL-3.0-or-later). Put PDF and EPUB files in `ux0:/data/VitaReader/books/`, then refresh the library. In a PDF, Cross switches page-fit/width-fit and Up/Down pans the enlarged page. Page turns, two-page mode, bookmarks, screenshots and the L+R page chooser remain available. PDFs retain their original fonts and layout. Password-protected PDFs are not supported.
 
 The library header now uses a larger transparent logo over the beige background. Custom fonts cache glyphs per pixel size with transparent atlas gutters, addressing reported Sans artifacts. Sources and license: [LICENSE](LICENSE), [third-party notices](THIRD_PARTY_NOTICES.md).

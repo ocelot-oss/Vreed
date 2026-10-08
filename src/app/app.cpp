@@ -1,3 +1,4 @@
+#include "input/orientation.hpp"
 #include "app/app.hpp"
 #include "app/config.hpp"
 #include "storage/settings.hpp"
@@ -12,14 +13,15 @@ bool App::bookmarked() const {
 void App::changeSetting(int direction,const Measure& measure) {
   auto candidate=settings_;
   if(!adjustSetting(candidate,settingRow_,direction))return;
-  const bool reflow=settingRow_<5||settingRow_==8;
+  const bool reflow=settingRow_<5||settingRow_==8||settingRow_==10;
   if(reflow) {
     renderer_.prepareLayout();
     try {
       renderer_.selectFont(candidate.fontFamily); const auto next=renderer_.readingPresentation(candidate);
-      session_.repaginate(next.layout,measure); renderer_.configure(next); presentation_=next; refreshPages_=true;
+      auto updated=session_; updated.repaginate(next.layout,measure); renderer_.configure(next); session_=std::move(updated); presentation_=next; refreshPages_=true;
     } catch(...) { renderer_.selectFont(settings_.fontFamily); throw; }
   }
+  if(candidate.orientation!=settings_.orientation) { swipe_=SwipeGesture{}; renderer_.resetPdfPan(); }
   settings_=candidate; audio_.settings(settings_.pageSound,settings_.soundVolume);
   error_.clear(); if(reflow)checkpoint();
   if(!saveSettings(config::settings,settings_))error_="Réglages : "+storageFailure;
@@ -83,6 +85,7 @@ void App::run() {
   bool running=true;
   while(running) {
     auto input=platform_.poll();
+    if(state_!=State::Library)orientInput(input,presentation_.orientation);
     if(lastFrame_>0) {
       const auto delta=input.nowMs-lastFrame_; frameStats_.frame(delta);
       if(delta>interaction::pauseGapMs)finishTurn(input.nowMs);
@@ -140,8 +143,9 @@ void App::run() {
             const std::size_t step=input.up||input.down?10:1;
             if(input.previous||input.up)jumpPage_=step>jumpPage_?0:jumpPage_-step;
             if(input.next||input.down)jumpPage_+=std::min(step,jumpCount_-1-jumpPage_);
-            if((input.touch.phase==TouchPhase::Down||input.touch.phase==TouchPhase::Move)&&input.touch.y>=245&&input.touch.y<=300)
-              jumpPage_=std::size_t(std::clamp(double(input.touch.x-250)/460,0.0,1.0)*(jumpCount_-1)+0.5);
+            const auto track=pageChooserTrack(presentation_);
+            if((input.touch.phase==TouchPhase::Down||input.touch.phase==TouchPhase::Move)&&input.touch.y>=track.y-25&&input.touch.y<=track.y+30)
+              jumpPage_=std::size_t(std::clamp(double(input.touch.x-track.x)/track.width,0.0,1.0)*(jumpCount_-1)+0.5);
           }
         } else if(input.rescan) { finishTurn(input.nowMs); overlay_=!overlay_; }
         else if(overlay_) {

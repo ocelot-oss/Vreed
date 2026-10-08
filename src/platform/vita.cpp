@@ -40,6 +40,8 @@ Input Vita::poll() {
   in.up=edge&SCE_CTRL_UP; in.down=edge&SCE_CTRL_DOWN;
   const auto triggers=triggers_.update(bits&SCE_CTRL_LTRIGGER,bits&SCE_CTRL_RTRIGGER,in.nowMs);
   in.jump=triggers.jump;
+  in.left=edge&SCE_CTRL_LEFT; in.right=edge&SCE_CTRL_RIGHT;
+  in.triggerPrevious=triggers.previous; in.triggerNext=triggers.next;
   in.previous=(edge&SCE_CTRL_LEFT)||triggers.previous; in.next=(edge&SCE_CTRL_RIGHT)||triggers.next;
   in.open=edge&SCE_CTRL_CROSS; in.back=edge&SCE_CTRL_CIRCLE; in.rescan=edge&SCE_CTRL_TRIANGLE;
   in.quit=edge&SCE_CTRL_START; in.bookmark=edge&SCE_CTRL_SQUARE; return in;
