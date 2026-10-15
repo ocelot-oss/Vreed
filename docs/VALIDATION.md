@@ -1,5 +1,11 @@
 # Validation gate
 
+## Portrait reading — version 00.10
+
+[Run 37753468103](https://github.com/ocelot-oss/Vreed/actions/runs/37753468103) passed all seven portable suites and native Vita packaging for `cf73de1e52d71abf81a8821d553abd77228a3367`. Orientation regressions cover portrait layout bounds, spread fallback/restoration, curl UV coordinates, touch/control remapping, persisted orientation and legacy settings migration. The downloaded 32591640-byte VPK passed SHA-256, ZIP integrity, SFO version/title ID, packaged branding and license checks.
+
+Actual rotated GPU output, touch comfort, upright screenshots and animation pacing still require Vita review. See [portrait device checks](DEVICE_REVIEW_7.md).
+
 ## PDF rendering, font atlas and library logo — version 00.09
 
 [Run 37696077344](https://github.com/ocelot-oss/Vreed/actions/runs/37696077344) passed six portable suites and native Vita packaging for `84b375d4509b76a4fcbcc27640922f6aba14db88`. The PDF suite renders distinct colored physical pages with the actual pinned MuPDF engine and checks spreads, page selection, bounds, backward navigation and stable page counts after setting changes. UTC conversion tests cover the Unix epoch, earlier dates and Gregorian leap years. Vita uses a tested UTC compatibility function and the SDK's FreeType/JPEG/zlib libraries.
