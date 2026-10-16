@@ -1,60 +1,67 @@
 # Vreed
 
-Version 00.10 adds portrait reading in either direction. While reading, press **Triangle → Orientation → Vertical droite / Vertical gauche**, then turn the Vita to match. EPUB text reflows into a 544×960 single page; PDFs keep their original layout and fit the portrait viewport. Touch gestures and directional controls rotate with the page, while L/R continue turning pages and L+R opens the page chooser. The setting persists across launches and the previous spread preference returns in horizontal mode. Optional bookmark captures are saved upright at 544×960 in portrait mode.
+A native EPUB and PDF reader for homebrew-enabled **PS Vita** systems. Browse a bookshelf, read on warm paper or a true-black OLED theme, and keep your place with a bookmark ribbon.
 
-Version 00.09 adds native PDF rendering through MuPDF (AGPL-3.0-or-later). Put PDF and EPUB files in `ux0:/data/VitaReader/books/`, then refresh the library. In a PDF, Cross switches page-fit/width-fit and Up/Down pans the enlarged page. Page turns, two-page mode, bookmarks, screenshots and the L+R page chooser remain available. PDFs retain their original fonts and layout. Password-protected PDFs are not supported.
+**Current version: 00.10 beta.** The seven portable test suites and native Vita build passed [GitHub Actions](https://github.com/ocelot-oss/Vreed/actions/runs/37753468103). Portrait rendering, PDF comfort and animation performance still need device feedback; this is a beta release.
 
-The library header now uses a larger transparent logo over the beige background. Custom fonts cache glyphs per pixel size with transparent atlas gutters, addressing reported Sans artifacts. Sources and license: [LICENSE](LICENSE), [third-party notices](THIRD_PARTY_NOTICES.md).
+## Download and install
 
+1. Open [Releases](https://github.com/ocelot-oss/Vreed/releases) and download **Vreed.vpk** from the 00.10 beta release.
+2. Copy the VPK to your Vita and install it with **VitaShell**.
+3. Launch Vreed once. It creates `ux0:/data/VitaReader/books/` automatically.
+4. Copy your `.epub` and `.pdf` files into that directory using VitaShell USB or FTP, then press **Triangle** in the library to refresh.
 
-Version 00.03 adopts the supplied Vreed logo for the library, Vita bubble and LiveArea. Display name/version are centralized in `config/identity.cmake` and generated into the native header. The title ID `VITARD001` and legacy `ux0:/data/VitaReader/` storage remain unchanged so this update retains existing books, settings and resume points. The package is now `Vreed.vpk`.
+Updates retain the title ID `VITARD001` and the existing `ux0:/data/VitaReader/` data directory, preserving books, settings and saved positions. The legacy directory name is intentional. Discovery scans the top level of the books directory, supports case-insensitive extensions and is limited to 512 files.
 
-Native PS Vita EPUB reader, milestones 1–3. C++17, VitaSDK, vita2d system PGF fonts, libarchive ZIP and Expat XML. Targets 960×544. No browser runtime.
+## Reading
 
-**Status: VitaSDK compilation and four portable test suites passed on GitHub Actions on 2026-10-06. A VPK was produced. Installation and real hardware validation remain outstanding.**
+- **BOOK:** warm paper, page curl, a running title and a bookmark ribbon; one page or a two-page spread in landscape.
+- **CLEAN:** an off-white page with generous margins.
+- **OLED NIGHT:** a true-black background with subdued text.
+- **Portrait:** press **Triangle → Orientation → Vertical droite / Vertical gauche**, then rotate the Vita. EPUB text reflows into a 544×960 single page; PDF pages keep their original layout. Touch and directional controls follow the orientation. L/R keep their previous/next roles. Returning to horizontal restores your spread preference.
+- **Fonts:** System, Serif, Sans and Mono, with adjustable size, spacing and margins. Wrapped body paragraphs are justified; headings and final paragraph lines remain left-aligned.
+- **PDF:** press **Cross** to switch between page-fit and width-fit, then use **Up/Down** to pan a magnified page. PDFs retain their original fonts and illustrations.
 
-The repository was empty. The available Windows environment had no VitaSDK, CMake, C++ compiler or installed WSL distribution. Public upstream headers and package recipes were inspected rather than assuming APIs.
+The library shows colored book spines, moving mascot poses and an opening-book animation. Original music by the project author plays in the library and fades when reading begins. Page sounds, animation style and volume are adjustable.
 
-See [build instructions](docs/BUILD.md), [architecture and support limits](docs/ARCHITECTURE.md), and [hardware acceptance checklist](docs/VALIDATION.md).
-
-Copy EPUB files into `ux0:/data/VitaReader/books`. The application creates its directories on first launch. Discovery is non-recursive, limited to 512 files, with case-insensitive extensions and filename titles until a book is opened. Triangle rescans.
+## Controls
 
 | Control | Library | Reader |
 |---|---|---|
-| D-pad / left stick | Up / down selection | Left / right pages |
-| Cross | Open | — |
-| Circle | Dismiss error | Close settings, or save and return |
-| L / R | — | Previous / next page or spread; adjust selected setting |
-| Triangle | Rescan | Open / close reading settings |
-| Square | — | Toggle temporary bookmark in BOOK |
+| D-pad / left stick | Select a book | Previous/next page; Up/Down pans PDFs |
+| Cross | Open the selected book | Toggle PDF zoom; confirm page selection |
+| Circle | Dismiss an error | Close an overlay, or save and return to the library |
+| L / R | — | Previous / next page or spread; adjust a setting |
+| L + R together | — | Open the whole-book page chooser |
+| Triangle | Refresh the library | Open / close reading settings |
+| Square | — | Save / move / retract the BOOK bookmark |
+| Front touch | Tap to select, tap again to open | Swipe to turn pages; drag the page chooser slider |
 | START | Quit | — |
 
-First press is immediate; held directions repeat after 350 ms then every 110 ms. In settings, up/down selects a row and left/right changes its value. Settings apply immediately. Circle closes the overlay; Circle again returns to the library.
+In reading settings, Up/Down selects a row and Left/Right changes its value. Settings apply immediately and persist across launches. In portrait, directional controls follow the rotated page. The page chooser moves one page with Left/Right or ten with Up/Down; Cross confirms and Circle cancels.
 
-Position is saved after navigation, setting changes and on return. New checkpoints retain a chapter and text offset, so typography changes keep the passage in view. Old milestone-1 checkpoints remain readable. Changing the EPUB content can still shift the resumed location.
+## Bookmarks and screenshots
 
-## Reading experiences
+Square pulls the BOOK ribbon and saves an explicit resume point, with a confirmation chime after successful storage. That point survives further navigation and application restarts. Square on the marked page retracts it and restores automatic resume; Square elsewhere moves it. Only the right-hand ribbon appears in a spread, while the saved position identifies the spread's first page.
 
-Triangle includes **Police** (System, Serif, Sans, Mono) and **Capture sur signet**, disabled by default. Font changes preserve the text anchor. Press **L + R together** to choose a page of the whole book: left/right moves one page, up/down ten, or use the touch slider; Cross confirms and Circle cancels. The light shelf background now contains three slowly moving mascot situations. See [00.08 device checks](docs/DEVICE_REVIEW_5.md).
+**Capture sur signet is disabled by default.** Enable it in reading settings to save a PNG when placing a bookmark. Captures go into `ux0:/data/Vreed/screenshots/`, created automatically: 960×544 in landscape, or upright 544×960 in portrait. Existing captures are retained when a bookmark is removed. A screenshot failure does not discard a successfully saved bookmark.
 
-Body paragraphs use justified wrapped lines; headings and final paragraph lines remain aligned left. Version 00.06 also uses buffered stereo playback for the supplied library music. See [audio and alignment review](docs/DEVICE_REVIEW_3.md).
+Without an explicit bookmark, Vreed saves progress after navigation, setting changes and returning to the library. EPUB positions retain a text anchor across typography and orientation changes. Changing a book's contents can still move its resumed position.
 
-- **BOOK**: warm paper on a dark surround, restrained grain and edge shadows, running title and folios. Choose one page or an open spread with independent margins and a shaded gutter. Navigation advances by two pages in a spread, including across chapter boundaries. The right sheet is blank at an unmatched final page.
-- **CLEAN**: off-white full-screen reading, generous margins, no texture, physical gutter or ribbon.
-- **OLED NIGHT**: true-black canvas, subdued off-white text, dim progress, black settings and error surfaces.
+## Supported formats and limits
 
-Triangle opens an overlay for mode, BOOK layout, font size, line spacing, margins, animation, page sound and volume. Large type falls back to one page rather than shrinking the text to force a spread. The requested layout is restored when choosing a smaller font. Settings persist across launches in `ux0:/data/VitaReader/settings.cfg`; malformed files use safe defaults.
+EPUB supports chapter navigation, justified text and embedded PNG/JPEG illustrations. SVG, GIF/WebP, CSS backgrounds and full browser-style EPUB layout are not supported. PDF rendering uses MuPDF; password-protected PDFs are not supported. Highlighting, annotations, search and cover thumbnails are not implemented.
 
-Square pulls the BOOK ribbon and saves an explicit resume point, confirmed by a short chime only after successful storage. That point survives further navigation and application restarts. Square on the marked page retracts it and restores automatic resume; Square elsewhere moves it to the current page. The single ribbon keeps a visible retracted tip. In a spread, Square marks the left page.
+Please report problems through [Issues](https://github.com/ocelot-oss/Vreed/issues), including your Vita model, Vreed version, book format and steps to reproduce. See the [portrait device checklist](docs/DEVICE_REVIEW_7.md) and [validation record](docs/VALIDATION.md) for checks still requiring hardware feedback.
 
-Only the right-hand ribbon appears in a spread. Captures are disabled by default from 00.08. When Capture sur signet is enabled in the menu, pulling the ribbon also saves a clean 960×544 PNG of the current reading view (both pages in spread mode) into `ux0:/data/Vreed/screenshots/`, created automatically. Files include a book identifier, chapter, page, timestamp and collision counter; repeated captures preserve previous images. Retracting the ribbon retains captures. A screenshot failure reports an error while retaining a successfully saved resume point.
+## Build and sources
 
-BOOK defaults to a 360 ms perceptual page curl; CLEAN and OLED NIGHT use a 160 ms slide. Choose NONE for instant turns. All modes support front-touch drags starting anywhere on the page: drag horizontally and release to complete or return. Spread turns advance two pages. Rapid physical presses finish the accepted turn before starting the next; cancelled drags never change the saved position.
+Vreed is C++17 with VitaSDK and vita2d, with libarchive/Expat for EPUB and MuPDF for PDF. No browser runtime is used. See [build instructions](docs/BUILD.md) and [architecture](docs/ARCHITECTURE.md).
 
-The library displays books as colored spines on wooden shelves. Touch a spine to select it, then again to open. The supplied recording loops in the library, fades out when a book opens and restarts on return. Existing sound and volume settings control playback. Embedded PNG/JPEG illustrations are fitted into pages; vector SVG, GIF/WebP and CSS backgrounds remain unsupported. Opening a selected book animates it out of the shelf and reveals the reader. See [second device-review changes](docs/DEVICE_REVIEW_2.md).
+Each release includes **Vreed-Sources.tar.gz**, containing the corresponding application sources, build recipes, pinned MuPDF engine and dependencies. Use that archive for the exact sources accompanying a VPK. GitHub's automatically generated source ZIP alone does not include the downloaded MuPDF dependency tree. Actions artifacts are temporary; published release assets provide the downloads for users.
 
-Optional quiet paper sounds use original procedural placeholder samples and a dedicated Vita audio worker. They accompany accepted turns and ribbon actions. Four volume levels include mute; sound failure leaves reading usable. Native audio, touch calibration, GPU output and frame pacing remain unvalidated.
+## License and credits
 
-See [milestone-3 implementation and test notes](docs/MILESTONE_3.md), [milestone-2 notes](docs/MILESTONE_2.md) and [remaining work](TODO.md).
+Vreed is distributed under **AGPL-3.0-or-later**. See [LICENSE](LICENSE) and [third-party notices](THIRD_PARTY_NOTICES.md). MuPDF is from Artifex; the patched vita2d font renderer retains its MIT license, and DejaVu fonts retain their original license.
 
-Highlighting, annotations, search and cover thumbnails remain deferred. Native font quality, French glyph coverage and scene performance still need real Vita validation.
+“Mascot's Library Visit” is original music by the project author, included with their permission. The Vreed mascot and branding were supplied by the project author; additional mascot poses and the transparent library logo were prepared with image generation tools. Asset provenance is documented in `assets/branding/` and `assets/audio/`.
