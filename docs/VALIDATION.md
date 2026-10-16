@@ -1,5 +1,11 @@
 # Validation gate
 
+## Configurable library folder — version 00.12
+
+[Run 38944680530](https://github.com/ocelot-oss/Vreed/actions/runs/38944680530) passed all eight portable suites and native Vita packaging for `3aa6635ce900e4201d49fbe0361df38a8b30ca59`. The new directory suite covers persistence, backup reads, invalid paths, paths with spaces, root/parent navigation, sorted folder enumeration, EPUB/PDF discovery and unavailable folders. The library menu uses a scan-and-save-before-switch flow; reading settings remain in their existing configuration file.
+
+The downloaded 32612992-byte VPK passed SHA-256, ZIP integrity, SFO version/title ID, packaged branding and license checks. Native folder browsing, touch selection, external mount availability and restart recovery still require Vita review. See [folder device checks](DEVICE_REVIEW_9.md).
+
 ## PDF speed, landscape size and touch — version 00.11
 
 [Run 38914013174](https://github.com/ocelot-oss/Vreed/actions/runs/38914013174) passed all seven portable suites and native Vita packaging for `00c810c58da083c7919a90545b37683a6f22c048`. The real MuPDF test confirms repeated requests reuse the recent rendered image. Orientation tests cover landscape PDF bounds, unchanged portrait dimensions, side taps, completed horizontal swipes, vertical panning and contact cancellation. The downloaded 32596833-byte VPK passed SHA-256, ZIP integrity, SFO version/title ID, branding and license checks.
