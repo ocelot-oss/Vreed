@@ -7,6 +7,7 @@
 #include <vita2d.h>
 #include <map>
 #include <initializer_list>
+#include <algorithm>
 namespace vr {
 class Renderer {
 public:
@@ -19,7 +20,9 @@ public:
   void panPdf(int direction);
   void resetPdfPan() { pdfPan_=0; }
   void prepareImages(std::initializer_list<const Page*> pages);
-  Presentation readingPresentation(const ReadingSettings& settings) const;
+  Presentation readingPresentation(const ReadingSettings& settings,bool pdf=false) const;
+  void defaultPdfZoom() { pdfFitWidth_=presentation_.orientation==Orientation::Horizontal; pdfPan_=0; }
+  void panPdfPixels(float pixels) { pdfPan_=std::max(0.0f,std::min(pdfMaxPan_,pdfPan_+pixels)); }
   void configure(const Presentation& presentation);
   void begin(bool reading); void finish();
   void library(const std::vector<Book>& books,std::size_t selected,double nowMs=0);

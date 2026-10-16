@@ -5,6 +5,7 @@
 #include "reader/turn_transaction.hpp"
 #include "platform/vita_audio.hpp"
 #include "platform/frame_stats.hpp"
+#include "input/pdf_gesture.hpp"
 namespace vr {
 class App {
 public: void run();
@@ -15,6 +16,7 @@ private:
   VitaAudio audio_;
   ReaderTurn turn_;
   SwipeGesture swipe_;
+  PdfGesture pdfTouch_;
   RibbonMotion ribbon_;
   EdgeFeedback feedback_;
   FrameStats frameStats_;

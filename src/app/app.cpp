@@ -17,11 +17,11 @@ void App::changeSetting(int direction,const Measure& measure) {
   if(reflow) {
     renderer_.prepareLayout();
     try {
-      renderer_.selectFont(candidate.fontFamily); const auto next=renderer_.readingPresentation(candidate);
+      renderer_.selectFont(candidate.fontFamily); const auto next=renderer_.readingPresentation(candidate,books_[selected_].format==Book::Format::Pdf);
       auto updated=session_; updated.repaginate(next.layout,measure); renderer_.configure(next); session_=std::move(updated); presentation_=next; refreshPages_=true;
     } catch(...) { renderer_.selectFont(settings_.fontFamily); throw; }
   }
-  if(candidate.orientation!=settings_.orientation) { swipe_=SwipeGesture{}; renderer_.resetPdfPan(); }
+  if(candidate.orientation!=settings_.orientation) { swipe_=SwipeGesture{}; pdfTouch_=PdfGesture{}; renderer_.defaultPdfZoom(); }
   settings_=candidate; audio_.settings(settings_.pageSound,settings_.soundVolume);
   error_.clear(); if(reflow)checkpoint();
   if(!saveSettings(config::settings,settings_))error_="Réglages : "+storageFailure;
@@ -54,7 +54,7 @@ void App::requestTurn(int direction,const Measure& measure,const TouchPoint* tou
     candidateSecond_={};
     if(presentation_.pageCount==2)candidateSecond_=turn_.candidate()->secondPage(measure);
     renderer_.prepareImages({&session_.page(),second_.page.get(),&turn_.candidate()->page(),candidateSecond_.page.get()});
-    auto kind=animationFor(settings_);
+    auto kind=books_[selected_].format==Book::Format::Pdf?TransitionKind::None:animationFor(settings_);
     if(kind!=TransitionKind::None&&!renderer_.captureTurn(books_[selected_],session_,second_,*turn_.candidate(),candidateSecond_)) {
       kind=TransitionKind::None; error_="Animation indisponible : changement instantané";
     } else error_.clear();
@@ -86,6 +86,7 @@ void App::run() {
   while(running) {
     auto input=platform_.poll();
     if(state_!=State::Library)orientInput(input,presentation_.orientation);
+    if(state_!=State::Reader||overlay_||jumpOpen_||input.rescan||input.back||input.jump)pdfTouch_=PdfGesture{};
     if(lastFrame_>0) {
       const auto delta=input.nowMs-lastFrame_; frameStats_.frame(delta);
       if(delta>interaction::pauseGapMs)finishTurn(input.nowMs);
@@ -111,10 +112,11 @@ void App::run() {
         }
         if(input.open&&!books_.empty()) {
           renderer_.prepareLayout();
-          const auto next=renderer_.readingPresentation(settings_);
+          const auto next=renderer_.readingPresentation(settings_,books_[selected_].format==Book::Format::Pdf);
           session_.open(books_[selected_],measure,next.layout);
           renderer_.resetPdfPan();
           renderer_.configure(next); presentation_=next;
+          renderer_.defaultPdfZoom(); pdfTouch_=PdfGesture{}; swipe_=SwipeGesture{};
           state_=State::Reader; overlay_=false; jumpOpen_=false;
           const auto saved=books_[selected_].position;
           bookmark_={saved.resumePinned,saved.chapter,saved.offset}; ribbon_.setVisible(bookmarked(),input.nowMs,true);
@@ -173,7 +175,12 @@ void App::run() {
           if(input.open)renderer_.togglePdfZoom();
           else renderer_.panPdf(input.down?1:-1);
         } else if(input.previous||input.next) {
+          pdfTouch_=PdfGesture{};
           requestTurn(input.next?1:-1,measure);
+        } else if(books_[selected_].format==Book::Format::Pdf) {
+          const auto action=pdfTouch_.update(input.touch,input.nowMs,presentation_.width);
+          if(action.turn)requestTurn(action.turn,measure);
+          else if(action.pan)renderer_.panPdfPixels(action.pan);
         } else {
           const auto direction=swipe_.update(input.touch);
           if(direction) { requestTurn(direction,measure,&swipe_.start()); turn_.motion().drag(input.touch.x,platform_.nowMs()); }

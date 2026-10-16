@@ -23,6 +23,8 @@ int main(int argc,char** argv) {
   { std::ofstream file(argv[1],std::ios::binary); file<<pdf; }
   vr::PdfDocument document(argv[1]); require(document.count()==2,"page count");
   auto red=document.page(0),blue=document.page(1);
+  require(document.page(0).get()==red.get(),"recent PDF page reused without rasterizing again");
+  require(document.page(1).get()==blue.get(),"cache keeps distinct page images");
   require(red->rgba&&red->width>0&&red->height>0,"RGBA raster");
   require(red->bytes.size()==std::size_t(red->width)*red->height*4,"raster size");
   const auto center=(std::size_t(red->height/2)*red->width+red->width/2)*4;

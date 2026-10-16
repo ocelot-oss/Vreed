@@ -10,7 +10,7 @@ const char* modeName(ReadingMode m) {
   switch(m) { case ReadingMode::Book:return "BOOK"; case ReadingMode::Clean:return "CLEAN"; case ReadingMode::Oled:return "OLED NIGHT"; }
   return "BOOK";
 }
-Presentation presentation(const ReadingSettings& s,const HeightMeasure& measure) {
+Presentation presentation(const ReadingSettings& s,const HeightMeasure& measure,bool pdf) {
   if(s.fontSize<0||s.fontSize>2||s.lineSpacing<0||s.lineSpacing>2||s.margins<0||s.margins>2)
     throw std::runtime_error("Invalid reading settings");
   Presentation p; p.orientation=s.orientation;
@@ -36,6 +36,13 @@ Presentation presentation(const ReadingSettings& s,const HeightMeasure& measure)
     p.paper[0]={0,0,p.width,p.height};
     const int margin=vertical?32+s.margins*12:(s.mode==ReadingMode::Oled?80:64)+s.margins*16;
     p.content[0]={margin,s.mode==ReadingMode::Oled?72:64,p.width-2*margin,p.height-(s.mode==ReadingMode::Oled?148:136)};
+  }
+  if(pdf&&!vertical) {
+    for(int i=0;i<p.pageCount;++i) {
+      const int width=p.width/p.pageCount;
+      p.paper[i]={i*width+2,2,width-4,p.height-4};
+      p.content[i]={i*width+8,8,width-16,p.height-54};
+    }
   }
   p.layout.width=p.content[0].width; p.layout.height=p.content[0].height;
   if(p.layout.lineHeight>p.layout.height)throw std::runtime_error("Font is too tall for the reading viewport");

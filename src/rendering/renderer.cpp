@@ -104,8 +104,8 @@ void Renderer::prepareImages(std::initializer_list<const Page*> pages) {
     images_.emplace(data.key,loaded);
   }
 }
-Presentation Renderer::readingPresentation(const ReadingSettings& settings) const {
-  return presentation(settings,[&](float scale){return fontHeight(scale);});
+Presentation Renderer::readingPresentation(const ReadingSettings& settings,bool pdf) const {
+  return presentation(settings,[&](float scale){return fontHeight(scale);},pdf);
 }
 void Renderer::configure(const Presentation& p) {
   clearImages();
@@ -279,7 +279,7 @@ void Renderer::opening(float progress,std::size_t selected) {
 void Renderer::reader(const Book& book,const Page& page,Position p,std::size_t count,std::size_t chapters,const Session::VisiblePage& second,float ribbon) {
   pdfMaxPan_=0;
   paint(paper_);
-  for(int i=0;i<presentation_.pageCount;++i) {
+  for(int i=0;i<presentation_.pageCount&&book.format!=Book::Format::Pdf;++i) {
     const auto paper=presentation_.paper[i];
     const auto area=presentation_.content[i];
     const auto title=fit(book.title,area.width-32,0.78f);
@@ -288,7 +288,7 @@ void Renderer::reader(const Book& book,const Page& page,Position p,std::size_t c
   drawPage(page,0,p,count,chapters);
   if(presentation_.pageCount==2&&second.page)drawPage(*second.page,1,second.position,second.count,chapters);
   drawRibbon(ribbon);
-  if(book.format==Book::Format::Pdf)text(24,presentation_.height-6,"X : page / largeur · Haut / bas : déplacer",0.65f,presentation_.theme.secondary);
+  if(book.format==Book::Format::Pdf)text(16,presentation_.height-6,"X : zoom · Glisser : page / défiler",0.65f,presentation_.theme.secondary);
 }
 void Renderer::panPdf(int direction) { pdfPan_=std::clamp(pdfPan_+direction*64.0f,0.0f,pdfMaxPan_); }
 void Renderer::drawRibbon(float amount) {

@@ -3,12 +3,15 @@
 #include <algorithm>
 #include <cmath>
 #include <stdexcept>
+#include <deque>
 namespace vr {
 struct PdfDocument::State {
   fz_context* ctx=nullptr;
   fz_document* doc=nullptr;
   int pages=0;
   std::string path;
+  std::deque<std::pair<std::size_t,std::shared_ptr<const ImageData>>> cache;
+  std::size_t cachedBytes=0;
   ~State() { if(ctx) { fz_drop_document(ctx,doc); fz_drop_context(ctx); } }
 };
 PdfDocument::PdfDocument(const std::string& path):state_(new State) {
@@ -31,6 +34,9 @@ PdfDocument::~PdfDocument()=default;
 std::size_t PdfDocument::count() const { return std::size_t(state_->pages); }
 std::shared_ptr<const ImageData> PdfDocument::page(std::size_t index) const {
   auto& s=*state_; if(index>=count())throw std::runtime_error("Page PDF invalide");
+  for(auto it=s.cache.begin();it!=s.cache.end();++it)if(it->first==index) {
+    auto hit=*it; s.cache.erase(it); s.cache.push_back(hit); return hit.second;
+  }
   fz_page* page=nullptr; fz_pixmap* pixmap=nullptr;
   fz_var(page); fz_var(pixmap);
   fz_try(s.ctx) {
@@ -59,6 +65,11 @@ std::shared_ptr<const ImageData> PdfDocument::page(std::size_t index) const {
     auto* dst=&image->bytes[(std::size_t(y)*image->width+x)*4];
     dst[0]=char(rgb[0]); dst[1]=char(rgb[1]); dst[2]=char(rgb[2]); dst[3]=char(255);
   }
+  constexpr std::size_t budget=16*1024*1024;
+  while(!s.cache.empty()&&(s.cache.size()>=3||s.cachedBytes+image->bytes.size()>budget)) {
+    s.cachedBytes-=s.cache.front().second->bytes.size(); s.cache.pop_front();
+  }
+  if(image->bytes.size()<=budget) { s.cache.emplace_back(index,image); s.cachedBytes+=image->bytes.size(); }
   return image;
 }
 }

@@ -33,7 +33,7 @@ struct Presentation {
   Layout layout;
 };
 using HeightMeasure=std::function<int(float)>;
-Presentation presentation(const ReadingSettings& settings,const HeightMeasure& height);
+Presentation presentation(const ReadingSettings& settings,const HeightMeasure& height,bool pdf=false);
 const char* modeName(ReadingMode mode);
 bool adjustSetting(ReadingSettings& settings,int row,int direction);
 std::string settingValue(const ReadingSettings& settings,int row);

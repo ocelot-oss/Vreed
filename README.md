@@ -2,7 +2,7 @@
 
 A native EPUB and PDF reader for homebrew-enabled **PS Vita** systems. Browse a bookshelf, read on warm paper or a true-black OLED theme, and keep your place with a bookmark ribbon.
 
-**Current version: 00.10 beta.** The seven portable test suites and native Vita build passed [GitHub Actions](https://github.com/ocelot-oss/Vreed/actions/runs/37753468103). Portrait rendering, PDF comfort and animation performance still need device feedback; this is a beta release.
+**Development version: 00.11.** PDF navigation now uses immediate page changes, reuses recently rendered pages, and supports swipe/tap page turns plus vertical touch panning. Landscape PDFs use almost the full screen width by default; Cross switches to whole-page fit. Portrait sizing is unchanged. The published 00.10 beta remains available in Releases until the next package is verified.
 
 ## Download and install
 
@@ -20,7 +20,7 @@ Updates retain the title ID `VITARD001` and the existing `ux0:/data/VitaReader/`
 - **OLED NIGHT:** a true-black background with subdued text.
 - **Portrait:** press **Triangle → Orientation → Vertical droite / Vertical gauche**, then rotate the Vita. EPUB text reflows into a 544×960 single page; PDF pages keep their original layout. Touch and directional controls follow the orientation. L/R keep their previous/next roles. Returning to horizontal restores your spread preference.
 - **Fonts:** System, Serif, Sans and Mono, with adjustable size, spacing and margins. Wrapped body paragraphs are justified; headings and final paragraph lines remain left-aligned.
-- **PDF:** press **Cross** to switch between page-fit and width-fit, then use **Up/Down** to pan a magnified page. PDFs retain their original fonts and illustrations.
+- **PDF:** landscape starts in width-fit with narrow margins; portrait starts in page-fit. Press **Cross** to switch, then use **Up/Down** or drag vertically to pan a magnified page. Swipe horizontally or tap the left/right side to change pages. Page turns are immediate, and a bounded cache reuses up to three recent page rasters. PDFs retain their original fonts and illustrations.
 
 The library shows colored book spines, moving mascot poses and an opening-book animation. Original music by the project author plays in the library and fades when reading begins. Page sounds, animation style and volume are adjustable.
 

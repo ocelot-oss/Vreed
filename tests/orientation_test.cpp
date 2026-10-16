@@ -1,6 +1,7 @@
 #include "input/orientation.hpp"
 #include "rendering/curl.hpp"
 #include "storage/settings.hpp"
+#include "input/pdf_gesture.hpp"
 #include <fstream>
 #include <stdexcept>
 #include <cmath>
@@ -8,6 +9,28 @@ static void require(bool v) {if(!v)throw std::runtime_error("Portrait regression
 int main(int argc,char** argv) {
   using namespace vr;
   if(argc!=2)return 2;
+  {
+    ReadingSettings s; auto wide=presentation(s,[](float){return 30;},true);
+    require(wide.content[0].width==944&&wide.content[0].height>=480);
+    s.orientation=Orientation::VerticalRight;
+    auto normal=presentation(s,[](float){return 30;});
+    auto pdf=presentation(s,[](float){return 30;},true);
+    require(normal.content[0].width==pdf.content[0].width&&normal.content[0].height==pdf.content[0].height);
+    PdfGesture gesture;
+    require(!gesture.update({TouchPhase::Down,1,800,200},0,960).turn);
+    require(gesture.update({TouchPhase::Up,1,800,200},100,960).turn==1);
+    gesture.update({TouchPhase::Down,1,100,200},200,960);
+    require(gesture.update({TouchPhase::Up,1,100,200},300,960).turn==-1);
+    gesture.update({TouchPhase::Down,1,600,200},400,960);
+    require(!gesture.update({TouchPhase::Move,1,450,205},450,960).turn);
+    require(gesture.update({TouchPhase::Up,1,450,205},500,960).turn==1);
+    gesture.update({TouchPhase::Down,1,600,300},600,960);
+    require(gesture.update({TouchPhase::Move,1,600,200},650,960).pan==100);
+    require(!gesture.update({TouchPhase::Up,1,600,200},700,960).turn);
+    gesture.update({TouchPhase::Down,1,800,200},800,960);
+    gesture.update({TouchPhase::Cancel,1,800,200},850,960);
+    require(!gesture.update({TouchPhase::Up,1,800,200},900,960).turn);
+  }
   for(auto orientation:{Orientation::VerticalRight,Orientation::VerticalLeft}) {
     ReadingSettings s; s.orientation=orientation; s.bookLayout=BookLayout::Spread;
     auto p=presentation(s,[](float){return 30;});
