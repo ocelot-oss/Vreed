@@ -1,3 +1,4 @@
+#include "i18n/language.hpp"
 #include "reader/session.hpp"
 #include <algorithm>
 #include <limits>
@@ -72,7 +73,7 @@ std::size_t Session::totalPageCount(const Measure& measure) {
   }
   std::size_t total=0;
   for(auto count:pageCounts_) {
-    if(count>std::numeric_limits<std::size_t>::max()-total)throw std::runtime_error("Too many book pages");
+    if(count>std::numeric_limits<std::size_t>::max()-total)throw std::runtime_error(tr("Too many book pages","Trop de pages dans le livre"));
     total+=count;
   }
   return total;

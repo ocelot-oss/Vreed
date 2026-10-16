@@ -1,8 +1,10 @@
+#include "i18n/language.hpp"
 #include "input/orientation.hpp"
 #include "app/app.hpp"
 #include "app/config.hpp"
 #include "storage/settings.hpp"
 #include "storage/file.hpp"
+#include "storage/language.hpp"
 #include <exception>
 #include <cstdio>
 #include <algorithm>
@@ -13,22 +15,22 @@ void App::browseDirectory(const std::string& path) {
   if(path.empty())choices={"ux0:/","uma0:/","imc0:/","xmc0:/","ur0:/","gro0:/","grw0:/"};
   else {
     choices=directories(path);
-    choices.insert(choices.begin(),{"Choisir ce dossier",".. Dossier parent","Autres stockages"});
+    choices.insert(choices.begin(),{tr("Select this folder","Choisir ce dossier"),tr(".. Parent folder",".. Dossier parent"),tr("Other storage","Autres stockages")});
   }
   browseDirectory_=path; directoryChoices_=std::move(choices); directoryOption_=0; directoryBrowser_=true;
 }
 void App::chooseDirectory(const std::string& path) {
   const auto normalized=normalizeLibraryDirectory(path);
-  if(normalized.empty())throw std::runtime_error("Dossier invalide");
+  if(normalized.empty())throw std::runtime_error(tr("Invalid folder","Dossier invalide"));
   auto books=discover(normalized);
-  if(!saveLibraryDirectory(config::librarySettings,normalized))throw std::runtime_error("Dossier : "+storageFailure);
+  if(!saveLibraryDirectory(config::librarySettings,normalized))throw std::runtime_error(tr("Folder: ","Dossier : ")+storageFailure);
   books_=std::move(books); selected_=0; libraryDirectory_=normalized; renderer_.libraryDirectory(normalized);
   directoryBrowser_=false; libraryOptions_=false; error_.clear();
 }
 void App::libraryOptionsInput(const Input& input) {
   if(input.back) { if(directoryBrowser_)directoryBrowser_=false; else libraryOptions_=false; return; }
   auto& selected=directoryBrowser_?directoryOption_:libraryOption_;
-  const int count=directoryBrowser_?int(directoryChoices_.size()):3;
+  const int count=directoryBrowser_?int(directoryChoices_.size()):4;
   const int step=input.up?-1:input.down?1:input.previous?-8:input.next?8:0;
   selected=std::clamp(selected+step,0,count-1);
   bool activate=input.open;
@@ -40,6 +42,11 @@ void App::libraryOptionsInput(const Input& input) {
   if(!directoryBrowser_) {
     if(selected==0) { auto books=discover(libraryDirectory_); books_=std::move(books); selected_=0; libraryOptions_=false; error_.clear(); }
     else if(selected==2)chooseDirectory(config::books);
+    else if(selected==3) {
+      const auto next=uiLanguage==Language::English?Language::French:Language::English;
+      if(!saveLanguage(config::languageSettings,next))throw std::runtime_error(std::string(tr("Language: ","Langue : "))+storageFailure);
+      uiLanguage=next; error_.clear();
+    }
     else {
       try { browseDirectory(libraryDirectory_); error_.clear(); }
       catch(const std::exception& e) { browseDirectory(""); error_=e.what(); }
@@ -67,7 +74,7 @@ void App::changeSetting(int direction,const Measure& measure) {
   if(candidate.orientation!=settings_.orientation) { swipe_=SwipeGesture{}; pdfTouch_=PdfGesture{}; renderer_.defaultPdfZoom(); }
   settings_=candidate; audio_.settings(settings_.pageSound,settings_.soundVolume);
   error_.clear(); if(reflow)checkpoint();
-  if(!saveSettings(config::settings,settings_))error_="Réglages : "+storageFailure;
+  if(!saveSettings(config::settings,settings_))error_=tr("Settings: ","Réglages : ")+storageFailure;
 }
 void App::refreshSecond(const Measure& measure) {
   if(!refreshPages_)return;
@@ -99,7 +106,7 @@ void App::requestTurn(int direction,const Measure& measure,const TouchPoint* tou
     renderer_.prepareImages({&session_.page(),second_.page.get(),&turn_.candidate()->page(),candidateSecond_.page.get()});
     auto kind=books_[selected_].format==Book::Format::Pdf?TransitionKind::None:animationFor(settings_);
     if(kind!=TransitionKind::None&&!renderer_.captureTurn(books_[selected_],session_,second_,*turn_.candidate(),candidateSecond_)) {
-      kind=TransitionKind::None; error_="Animation indisponible : changement instantané";
+      kind=TransitionKind::None; error_=tr("Animation unavailable: instant page turn","Animation indisponible : changement instantané");
     } else error_.clear();
     turnStarted_=platform_.nowMs();
     if(touch) {
@@ -112,12 +119,13 @@ void App::checkpoint() {
   if(books_[selected_].position.resumePinned)return;
   books_[selected_].position=session_.position;
   books_[selected_].position.resumePinned=false;
-  if(!savePosition(books_[selected_].path,books_[selected_].position))error_="Position : "+storageFailure;
+  if(!savePosition(books_[selected_].path,books_[selected_].position))error_=tr("Position: ","Position : ")+storageFailure;
 }
 void App::run() {
+  uiLanguage=loadLanguage(config::languageSettings);
   try {
     prepareStorage();
-  } catch(const std::exception& e) { error_="Stockage : "+std::string(e.what()); }
+  } catch(const std::exception& e) { error_=tr("Storage: ","Stockage : ")+std::string(e.what()); }
   try {
     settings_=loadSettings(config::settings); audio_.settings(settings_.pageSound,settings_.soundVolume);
     try { renderer_.selectFont(settings_.fontFamily); }
@@ -214,9 +222,9 @@ void App::run() {
             if(!active&&settings_.bookmarkScreenshot) {
               refreshSecond(measure); renderer_.prepareImages({&session_.page(),second_.page.get()});
               if(!renderer_.saveScreenshot(books_[selected_],session_,second_,config::screenshots))
-                error_="Signet enregistré, capture : "+storageFailure;
+                error_=tr("Bookmark saved, screenshot: ","Signet enregistré, capture : ")+storageFailure;
             }
-          } else error_="Signet : "+storageFailure;
+          } else error_=tr("Bookmark: ","Signet : ")+storageFailure;
         } else if(books_[selected_].format==Book::Format::Pdf&&(input.open||input.up||input.down)) {
           finishTurn(input.nowMs);
           if(input.open)renderer_.togglePdfZoom();
@@ -248,8 +256,8 @@ void App::run() {
     if(state_==State::Library) {
       renderer_.library(books_,selected_,renderNow);
       if(libraryOptions_) {
-        if(directoryBrowser_)renderer_.menuPanel("Choisir le dossier des livres",browseDirectory_.empty()?"Stockages de la Vita":browseDirectory_,directoryChoices_,directoryOption_);
-        else renderer_.menuPanel("Options de la bibliothèque",libraryDirectory_,{"Actualiser les livres","Choisir le dossier des livres","Rétablir le dossier par défaut"},libraryOption_);
+        if(directoryBrowser_)renderer_.menuPanel(tr("Choose books folder","Choisir le dossier des livres"),browseDirectory_.empty()?tr("Vita storage","Stockages de la Vita"):browseDirectory_,directoryChoices_,directoryOption_);
+        else renderer_.menuPanel(tr("Library options","Options de la bibliothèque"),libraryDirectory_,{tr("Refresh books","Actualiser les livres"),tr("Choose books folder","Choisir le dossier des livres"),tr("Restore default folder","Rétablir le dossier par défaut"),std::string(tr("Language / Langue: ","Langue / Language : "))+(uiLanguage==Language::English?"English":"Français")},libraryOption_);
       }
     }
     else if(state_==State::Opening)renderer_.opening(float((renderNow-openingStarted_)/650),selected_);

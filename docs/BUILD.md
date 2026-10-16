@@ -2,7 +2,7 @@
 
 ## GitHub Actions (no local SDK or administrator access)
 
-The workflow `.github/workflows/build-vita.yml` first runs eight portable suites on Ubuntu, including library-directory persistence/discovery, portrait orientation, real EPUB and MuPDF integration. It then builds the native release in the full official VitaSDK image `vitasdk/vitasdk:2026.08-20260815`. The dated image tag fixes the SDK image rather than following `latest`.
+The workflow `.github/workflows/build-vita.yml` first runs nine portable suites on Ubuntu, including English/French language persistence, library-directory persistence/discovery, portrait orientation, real EPUB and MuPDF integration. It then builds the native release in the full official VitaSDK image `vitasdk/vitasdk:2026.08-20260815`. The dated image tag fixes the SDK image rather than following `latest`.
 
 1. Create a GitHub repository (private is fine), and push this project to its `main` branch. `.tools/` is excluded; do not upload downloaded SDKs or PowerShell.
 2. Open **Actions → Build Vreed**. A push to `main` starts it automatically; **Run workflow** starts it manually once the workflow is on the default branch.

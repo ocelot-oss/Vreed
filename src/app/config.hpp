@@ -6,6 +6,7 @@ constexpr const char* data = "ux0:/data/VitaReader";
 constexpr const char* positions = "ux0:/data/VitaReader/positions";
 constexpr const char* settings = "ux0:/data/VitaReader/settings.cfg";
 constexpr const char* librarySettings = "ux0:/data/VitaReader/library.cfg";
+constexpr const char* languageSettings = "ux0:/data/VitaReader/language.cfg";
 constexpr const char* screenshots = "ux0:/data/Vreed/screenshots";
 constexpr int width = 960, height = 544;
 constexpr std::size_t maxEntry = 4 * 1024 * 1024;

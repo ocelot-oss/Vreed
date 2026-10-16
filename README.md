@@ -1,6 +1,8 @@
 # Vreed
 
-**Development version: 00.12.** In the main library, press **Triangle → Choisir le dossier des livres** to browse folders, then select **Choisir ce dossier**. **Autres stockages** lists Vita mount points, including ux0 and uma0. The selected folder is saved for future launches and applies to both EPUB and PDF files. **Rétablir le dossier par défaut** restores `ux0:/data/VitaReader/books/`; **Actualiser les livres** rescans the current folder. Circle returns from the folder selector; Triangle closes the menu. Touch selects a row and a second tap opens it; L/R jumps eight entries.
+**Development version: 00.13.** Vreed now starts in **English** by default, including after upgrading without a language preference. From the library, press **Triangle → Language / Langue → Cross** to switch to **Français**. The change applies immediately and persists across restarts. Select **Langue / Language** again to return to English. Reading controls, settings, directory browsing and Vreed's own errors follow the chosen language; book contents/titles and dependency diagnostic details are not translated.
+
+Since 00.12, the main library offers **Triangle → Choose books folder** (Français: **Choisir le dossier des livres**). Browse folders and select **Select this folder**. **Other storage** lists Vita mount points, including ux0 and uma0. The selected folder is saved for future launches and applies to both EPUB and PDF files. **Restore default folder** restores `ux0:/data/VitaReader/books/`; **Refresh books** rescans the current folder. Circle returns from the folder selector; Triangle closes the menu. Touch selects a row and a second tap opens it; L/R jumps eight entries.
 
 A native EPUB and PDF reader for homebrew-enabled **PS Vita** systems. Browse a bookshelf, read on warm paper or a true-black OLED theme, and keep your place with a bookmark ribbon.
 

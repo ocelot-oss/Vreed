@@ -1,0 +1,7 @@
+# English/French interface — 00.13
+
+English is the default language. Library Triangle opens options; the fourth row is Language / Langue. Cross toggles English and Français immediately, without reopening the app or changing the book folder. Touch uses the existing select-then-open behavior. The preference is saved atomically in `ux0:/data/VitaReader/language.cfg`, separately from typography and library paths. Missing or invalid configuration defaults to English; upgrades with no language preference also start in English.
+
+Application labels, reading settings and values, folder browser actions, progress captions, PDF hints, page chooser, screenshot failures and Vreed's EPUB/PDF/storage errors use a shared bilingual helper. The language name remains recognizable in either language. Book titles, file and folder names, book text and images are preserved. Raw messages produced by MuPDF/libpng or numeric filesystem diagnostics can retain their own language.
+
+The portable language suite checks the English default, French switch, live reading-setting labels, persistence in both directions, invalid preference rejection, malformed-file fallback and backup reads. On Vita, switch in both directions, browse folders, open EPUB/PDF, open settings and L+R page chooser, and restart to check persistence. Inspect label/value spacing in landscape and both portrait orientations with each font. Check French accents and English button hints; confirm reading contents and all other preferences remain unchanged.

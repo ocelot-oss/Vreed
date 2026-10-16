@@ -1,15 +1,16 @@
+#include "i18n/language.hpp"
 #include "reader/layout.hpp"
 #include <stdexcept>
 #include <algorithm>
 namespace vr {
 std::size_t pageForOffset(const std::vector<Page>& pages,std::size_t offset) {
-  if(pages.empty())throw std::runtime_error("No reader pages");
+  if(pages.empty())throw std::runtime_error(tr("No reader pages","Aucune page lisible"));
   std::size_t index=0;
   while(index+1<pages.size()&&pages[index+1].offset<=offset)++index;
   return index;
 }
 std::vector<Page> paginate(const Chapter& chapter,const Layout& l,const Measure& measure) {
-  if(l.width<=0||l.height<l.lineHeight||l.lineHeight<=0)throw std::runtime_error("Invalid viewport");
+  if(l.width<=0||l.height<l.lineHeight||l.lineHeight<=0)throw std::runtime_error(tr("Invalid viewport","Zone de lecture invalide"));
   std::vector<Page> pages(1); int y=0; std::size_t base=0;
   auto emit=[&](const std::string& text,float scale,std::size_t offset,bool justify=false) {
     if(y+l.lineHeight>l.height) { pages.emplace_back(); y=0; }
@@ -40,7 +41,7 @@ std::vector<Page> paginate(const Chapter& chapter,const Layout& l,const Measure&
         std::size_t end=j+1;
         while(end<word.size()&&(static_cast<unsigned char>(word[end])&0xc0)==0x80)++end;
         const auto glyph=word.substr(j,end-j);
-        if(measure(glyph,scale)>l.width)throw std::runtime_error("Glyph exceeds page width");
+        if(measure(glyph,scale)>l.width)throw std::runtime_error(tr("Glyph exceeds page width","Un caractère dépasse la largeur de la page"));
         if(!line.empty()&&measure(line+glyph,scale)>l.width) { emit(line,scale,lineOffset); line.clear(); }
         if(line.empty())lineOffset=base+begin+j;
         line+=glyph; j=end;

@@ -1,3 +1,4 @@
+#include "i18n/language.hpp"
 #include "reader/orientation.hpp"
 #include "rendering/renderer.hpp"
 #include "app/identity.hpp"
@@ -17,11 +18,11 @@
 extern "C" { extern float _vita2d_ortho_matrix[16]; }
 namespace vr {
 Renderer::Renderer() {
-  if(sceSysmoduleLoadModule(SCE_SYSMODULE_PGF)<0)throw std::runtime_error("PGF module unavailable");
-  if(vita2d_init()<0) { sceSysmoduleUnloadModule(SCE_SYSMODULE_PGF); throw std::runtime_error("Graphics initialization failed"); }
+  if(sceSysmoduleLoadModule(SCE_SYSMODULE_PGF)<0)throw std::runtime_error(tr("PGF module unavailable","Module PGF indisponible"));
+  if(vita2d_init()<0) { sceSysmoduleUnloadModule(SCE_SYSMODULE_PGF); throw std::runtime_error(tr("Graphics initialization failed","Échec de l’initialisation graphique")); }
   std::memcpy(landscapeProjection_,_vita2d_ortho_matrix,sizeof(landscapeProjection_));
   font_=vita2d_load_default_pgf();
-  if(!font_) { vita2d_fini(); sceSysmoduleUnloadModule(SCE_SYSMODULE_PGF); throw std::runtime_error("System font unavailable"); }
+  if(!font_) { vita2d_fini(); sceSysmoduleUnloadModule(SCE_SYSMODULE_PGF); throw std::runtime_error(tr("System font unavailable","Police système indisponible")); }
   logo_=vita2d_load_PNG_file("app0:/assets/branding/library-logo.png");
   if(logo_) { logo_->gxm_rtgt=nullptr; logo_->depth_UID=0; vita2d_texture_set_filters(logo_,SCE_GXM_TEXTURE_FILTER_LINEAR,SCE_GXM_TEXTURE_FILTER_LINEAR); }
   mascots_=vita2d_load_PNG_file("app0:/assets/branding/mascot-poses.png");
@@ -40,11 +41,11 @@ Renderer::~Renderer() {
 void Renderer::prepareLayout() { vita2d_wait_rendering_done(); } // Measurements may populate the shared glyph atlas.
 void Renderer::selectFont(int family) {
   if(family==fontFamily_)return;
-  if(family<0||family>3)throw std::runtime_error("Police inconnue");
+  if(family<0||family>3)throw std::runtime_error(tr("Unknown font","Police inconnue"));
   vita2d_wait_rendering_done();
   const char* paths[]={"","app0:/assets/fonts/DejaVuSerif.ttf","app0:/assets/fonts/DejaVuSans.ttf","app0:/assets/fonts/DejaVuSansMono.ttf"};
   auto* next=family?vita2d_load_font_file(paths[family]):nullptr;
-  if(family&&!next)throw std::runtime_error("Impossible de charger la police");
+  if(family&&!next)throw std::runtime_error(tr("Cannot load font","Impossible de charger la police"));
   if(readingFont_)vita2d_free_font(readingFont_);
   readingFont_=next; fontFamily_=family;
 }
@@ -178,7 +179,7 @@ void Renderer::library(const std::vector<Book>& books,std::size_t selected,doubl
       480.0f/(w*0.47f),410.0f/(h*0.43f),RGBA8(255,255,255,55));
   }
   if(logo_)vita2d_draw_texture_scale(logo_,30,-18,120.0f/vita2d_texture_get_width(logo_),120.0f/vita2d_texture_get_height(logo_));
-  text(164,68,"Bibliothèque · "+std::to_string(books.size())+" livres",0.85f,RGBA8(105,91,74,255));
+  text(164,68,tr("Library · ","Bibliothèque · ")+std::to_string(books.size())+tr(" books"," livres"),0.85f,RGBA8(105,91,74,255));
   for(int row=0;row<2;++row) {
     const int y=260+row*208;
     vita2d_draw_rectangle(28,y+14,904,14,RGBA8(0,0,0,90));
@@ -186,7 +187,7 @@ void Renderer::library(const std::vector<Book>& books,std::size_t selected,doubl
     vita2d_draw_rectangle(28,y,904,2,RGBA8(157,111,71,255));
     for(int line=0;line<5;++line)vita2d_draw_rectangle(32,y+4+line*2,896,1,RGBA8(43,28,18,25));
   }
-  if(books.empty()) { text(42,210,"Ajoutez vos fichiers EPUB ou PDF dans :",1.2f,RGBA8(54,44,36,255)); text(42,252,fit(libraryDirectory_,865,1.0f),1.0f,RGBA8(54,44,36,255)); }
+  if(books.empty()) { text(42,210,tr("Add EPUB or PDF files to:","Ajoutez vos fichiers EPUB ou PDF dans :"),1.2f,RGBA8(54,44,36,255)); text(42,252,fit(libraryDirectory_,865,1.0f),1.0f,RGBA8(54,44,36,255)); }
   const unsigned colors[]={RGBA8(77,109,103,255u),RGBA8(139,72,59,255u),RGBA8(119,97,142,255u),RGBA8(154,121,61,255u),RGBA8(61,86,121,255u),RGBA8(114,91,76,255u)};
   auto first=(selected/20)*20;
   for(std::size_t i=first;i<books.size()&&i<first+20;++i) {
@@ -207,10 +208,10 @@ void Renderer::library(const std::vector<Book>& books,std::size_t selected,doubl
       remaining.erase(0,end); while(!remaining.empty()&&remaining.front()==' ')remaining.erase(0,1);
     }
     vita2d_draw_rectangle(x+8,bottom-27,56,1,RGBA8(239,218,173,150));
-    text(x+10,bottom-9,books[i].position.resumePinned?"Signet":books[i].format==Book::Format::Pdf?"PDF":"EPUB",0.65f,RGBA8(242,224,186,255));
+    text(x+10,bottom-9,books[i].position.resumePinned?tr("Marked","Signet"):books[i].format==Book::Format::Pdf?"PDF":"EPUB",0.65f,RGBA8(242,224,186,255));
   }
-  text(42,494,fit("Dossier : "+libraryDirectory_,875,0.6f),0.6f,RGBA8(105,91,74,255));
-  text(42,524,"X Ouvrir · Toucher pour sélectionner · Triangle Options",0.8f,RGBA8(105,91,74,255));
+  text(42,494,fit(tr("Folder: ","Dossier : ")+libraryDirectory_,875,0.6f),0.6f,RGBA8(105,91,74,255));
+  text(42,524,tr("X Open · Tap to select · Triangle Options","X Ouvrir · Toucher pour sélectionner · Triangle Options"),0.8f,RGBA8(105,91,74,255));
 }
 void Renderer::menuPanel(const std::string& title,const std::string& subtitle,const std::vector<std::string>& choices,int selected) {
   const auto ink=RGBA8(54,44,36,255),muted=RGBA8(105,91,74,255);
@@ -223,7 +224,7 @@ void Renderer::menuPanel(const std::string& title,const std::string& subtitle,co
     if(i==selected)vita2d_draw_rectangle(96,y,768,30,RGBA8(228,211,177,255));
     text(110,y+22,fit(choices[i],730,0.85f),0.85f,ink);
   }
-  text(104,454,"X Choisir · O Retour · Triangle Fermer · L/R Parcourir",0.75f,muted);
+  text(104,454,tr("X Select · O Back · Triangle Close · L/R Browse","X Choisir · O Retour · Triangle Fermer · L/R Parcourir"),0.75f,muted);
   text(104,477,std::to_string(selected+1)+" / "+std::to_string(choices.size()),0.65f,muted);
 }
 void Renderer::drawPage(const Page& page,int index,Position position,std::size_t count,std::size_t chapters) {
@@ -246,13 +247,13 @@ void Renderer::drawPage(const Page& page,int index,Position position,std::size_t
         vita2d_draw_texture_scale(it->second.texture,area.x+(area.width-w)/2,area.y+y,scale,scale);
       } else vita2d_draw_texture_scale(it->second.texture,area.x+(area.width-image.width)/2,area.y+image.y,float(image.width)/image.image->width,float(image.height)/image.image->height);
     }
-    else text(area.x,area.y+image.y+24,"Illustration indisponible",0.8f,presentation_.theme.secondary);
+    else text(area.x,area.y+image.y+24,tr("Image unavailable","Illustration indisponible"),0.8f,presentation_.theme.secondary);
   }
   vita2d_disable_clipping();
   std::string label=std::to_string(position.page+1)+" / "+std::to_string(count);
   if(!page.images.empty()&&page.images.front().image->rgba)label=std::to_string(position.chapter+1)+" / "+std::to_string(chapters);
   else if(presentation_.pageCount==2)label=std::to_string(position.chapter+1)+" · "+label;
-  else label="Chapitre "+std::to_string(position.chapter+1)+" / "+std::to_string(chapters)+"   ·   "+label;
+  else label=tr("Chapter ","Chapitre ")+std::to_string(position.chapter+1)+" / "+std::to_string(chapters)+"   ·   "+label;
   const auto paper=presentation_.paper[index];
   const int width=measure(label,0.8f);
   const int x=presentation_.pageCount==2?(index==0?area.x:area.x+area.width-width):(presentation_.width-width)/2;
@@ -303,7 +304,7 @@ void Renderer::reader(const Book& book,const Page& page,Position p,std::size_t c
   drawPage(page,0,p,count,chapters);
   if(presentation_.pageCount==2&&second.page)drawPage(*second.page,1,second.position,second.count,chapters);
   drawRibbon(ribbon);
-  if(book.format==Book::Format::Pdf)text(16,presentation_.height-6,"X : zoom · Glisser : page / défiler",0.65f,presentation_.theme.secondary);
+  if(book.format==Book::Format::Pdf)text(16,presentation_.height-6,tr("X: zoom · Swipe: page / scroll","X : zoom · Glisser : page / défiler"),0.65f,presentation_.theme.secondary);
 }
 void Renderer::panPdf(int direction) { pdfPan_=std::clamp(pdfPan_+direction*64.0f,0.0f,pdfMaxPan_); }
 void Renderer::drawRibbon(float amount) {
@@ -320,7 +321,7 @@ void Renderer::drawRibbon(float amount) {
 }
 bool Renderer::saveScreenshot(const Book& book,Session& session,const Session::VisiblePage& second,const std::string& directory) {
   vita2d_wait_rendering_done();
-  if(!ensureSurfaces()) { storageFailure="capture : mémoire graphique indisponible"; return false; }
+  if(!ensureSurfaces()) { storageFailure=tr("Screenshot: graphics memory unavailable","capture : mémoire graphique indisponible"); return false; }
   vita2d_set_clear_color(presentation_.theme.background);
   projection(presentation_.orientation);
   vita2d_start_drawing_advanced(source_,0); vita2d_clear_screen();
@@ -357,7 +358,7 @@ bool Renderer::saveScreenshot(const Book& book,Session& session,const Session::V
   for(unsigned counter=0;;++counter) {
     path=name.str()+"-"+std::to_string(counter)+".png";
     SceIoStat stat{}; if(sceIoGetstat(path.c_str(),&stat)<0)break;
-    if(counter>=9999) { storageFailure="capture : trop de fichiers pour cette page"; return false; }
+    if(counter>=9999) { storageFailure=tr("Screenshot: too many files for this page","capture : trop de fichiers pour cette page"); return false; }
   }
   const auto temporary=path+".tmp";
   if(!writeFile(temporary,encoded)) { sceIoRemove(temporary.c_str()); return false; }
@@ -439,8 +440,8 @@ void Renderer::transition(const PageTransition& motion) {
 void Renderer::settings(const ReadingSettings& settings,int selected) {
   const unsigned bg=settings.mode==ReadingMode::Oled?RGBA8(0,0,0,255):RGBA8(20,26,31,250),fg=RGBA8(228,230,228,255),dim=RGBA8(137,151,159,255);
   const int w=std::min(510,presentation_.width-32),x=(presentation_.width-w)/2,y=(presentation_.height-512)/2;
-  vita2d_draw_rectangle(x,y,w,512,bg); text(x+24,y+36,"Lecture",1.2f,fg);
-  const char* labels[]={"Mode","Disposition","Taille de police","Interligne","Marges","Animation","Son de page","Volume","Police","Capture sur signet","Orientation"};
+  vita2d_draw_rectangle(x,y,w,512,bg); text(x+24,y+36,tr("Reading","Lecture"),1.2f,fg);
+  const char* labels[]={"Mode",tr("Layout","Disposition"),tr("Font size","Taille de police"),tr("Line spacing","Interligne"),tr("Margins","Marges"),"Animation",tr("Page sound","Son de page"),"Volume",tr("Font","Police"),tr("Bookmark screenshot","Capture sur signet"),"Orientation"};
   for(int row=0;row<settingsRowCount;++row) {
     const int line=y+53+row*34;
     if(row==selected)vita2d_draw_rectangle(x+12,line-3,w-24,30,RGBA8(36,48,56,255));
@@ -448,20 +449,20 @@ void Renderer::settings(const ReadingSettings& settings,int selected) {
     const auto value=settingValue(settings,row);
     text(x+w-25-measure(value,0.85f),line+20,value,0.85f,dim);
   }
-  text(x+24,y+454,presentation_.spreadLimited?"Une page pour rester lisible":"Gauche / droite : modifier",0.75f,dim);
-  text(x+24,y+480,"O ou Triangle : fermer",0.75f,dim);
+  text(x+24,y+454,presentation_.spreadLimited?tr("One page for readability","Une page pour rester lisible"):tr("Left / right: change","Gauche / droite : modifier"),0.75f,dim);
+  text(x+24,y+480,tr("O or Triangle: close","O ou Triangle : fermer"),0.75f,dim);
 }
 void Renderer::pageChooser(std::size_t page,std::size_t count) {
   const auto fg=presentation_.theme.text; const auto track=pageChooserTrack(presentation_);
   const int x=track.x-60,y=track.y-125,w=track.width+120;
   vita2d_draw_rectangle(x,y,w,250,presentation_.theme.paper);
-  text(x+30,y+38,"Aller à une page du livre",1.05f,fg);
+  text(x+30,y+38,tr("Go to a book page","Aller à une page du livre"),1.05f,fg);
   text(x+30,y+82,std::to_string(page+1)+" / "+std::to_string(count),1.4f,fg);
   vita2d_draw_rectangle(track.x,track.y,track.width,4,presentation_.theme.secondary);
   const float thumb=track.x+(count>1?float(track.width)*page/(count-1):0);
   vita2d_draw_fill_circle(thumb,track.y+2,9,presentation_.theme.accent);
-  text(x+30,y+178,"Gauche / droite : 1 · Haut / bas : 10",0.7f,fg);
-  text(x+30,y+208,"Toucher la barre · X Valider · O Annuler",0.7f,fg);
+  text(x+30,y+178,tr("Left / right: 1 · Up / down: 10","Gauche / droite : 1 · Haut / bas : 10"),0.7f,fg);
+  text(x+30,y+208,tr("Tap the bar · X Confirm · O Cancel","Toucher la barre · X Valider · O Annuler"),0.7f,fg);
 }
 void Renderer::message(const std::string& s) {
   const bool oled=reading_&&presentation_.theme.background==RGBA8(0,0,0,255);

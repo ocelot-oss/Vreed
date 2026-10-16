@@ -1,3 +1,4 @@
+#include "i18n/language.hpp"
 #pragma once
 #include "app/config.hpp"
 #include "storage/atomic_file.hpp"
@@ -30,7 +31,7 @@ inline std::string loadLibraryDirectory(const std::string& file) {
   path=normalizeLibraryDirectory(path); return path.empty()?config::books:path;
 }
 inline bool saveLibraryDirectory(const std::string& file,const std::string& directory) {
-  const auto path=normalizeLibraryDirectory(directory); if(path.empty()) { storageFailure="Dossier invalide"; return false; }
+  const auto path=normalizeLibraryDirectory(directory); if(path.empty()) { storageFailure=tr("Invalid folder","Dossier invalide"); return false; }
   return writeFile(file+".tmp","VRL1\n"+path+"\n")&&replaceFile(file+".tmp",file);
 }
 }

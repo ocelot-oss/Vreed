@@ -1,3 +1,4 @@
+#include "i18n/language.hpp"
 #include "reader/settings.hpp"
 #include <algorithm>
 #include <stdexcept>
@@ -12,7 +13,7 @@ const char* modeName(ReadingMode m) {
 }
 Presentation presentation(const ReadingSettings& s,const HeightMeasure& measure,bool pdf) {
   if(s.fontSize<0||s.fontSize>2||s.lineSpacing<0||s.lineSpacing>2||s.margins<0||s.margins>2)
-    throw std::runtime_error("Invalid reading settings");
+    throw std::runtime_error(tr("Invalid reading settings","Réglages de lecture invalides"));
   Presentation p; p.orientation=s.orientation;
   const bool vertical=s.orientation!=Orientation::Horizontal;
   if(vertical) { p.width=544; p.height=960; }
@@ -45,7 +46,7 @@ Presentation presentation(const ReadingSettings& s,const HeightMeasure& measure,
     }
   }
   p.layout.width=p.content[0].width; p.layout.height=p.content[0].height;
-  if(p.layout.lineHeight>p.layout.height)throw std::runtime_error("Font is too tall for the reading viewport");
+  if(p.layout.lineHeight>p.layout.height)throw std::runtime_error(tr("Font is too tall for the reading viewport","Police trop grande pour la zone de lecture"));
   return p;
 }
 bool adjustSetting(ReadingSettings& s,int row,int direction) {
@@ -70,19 +71,19 @@ bool adjustSetting(ReadingSettings& s,int row,int direction) {
   return true;
 }
 std::string settingValue(const ReadingSettings& s,int row) {
-  const char* sizes[]={"Petite","Moyenne","Grande"};
-  const char* spacing[]={"Serré","Normal","Aéré"};
-  const char* margins[]={"Étroites","Normales","Larges"};
+  const char* sizes[]={tr("Small","Petite"),tr("Medium","Moyenne"),tr("Large","Grande")};
+  const char* spacing[]={tr("Tight","Serré"),"Normal",tr("Loose","Aéré")};
+  const char* margins[]={tr("Narrow","Étroites"),tr("Normal","Normales"),tr("Wide","Larges")};
   switch(row) {
     case 0:return modeName(s.mode);
-    case 1:if(s.orientation!=Orientation::Horizontal)return "Vertical : une page"; return s.mode!=ReadingMode::Book?"BOOK uniquement":s.bookLayout==BookLayout::Single?"Une page":"Deux pages";
+    case 1:if(s.orientation!=Orientation::Horizontal)return tr("Portrait: one page","Vertical : une page"); return s.mode!=ReadingMode::Book?tr("BOOK only","BOOK uniquement"):s.bookLayout==BookLayout::Single?tr("One page","Une page"):tr("Two pages","Deux pages");
     case 2:return sizes[s.fontSize]; case 3:return spacing[s.lineSpacing]; case 4:return margins[s.margins];
-    case 5:switch(animationFor(s)) { case TransitionKind::Curl:return "Page Curl"; case TransitionKind::Slide:return "Slide"; case TransitionKind::None:return "Aucune"; } break;
-    case 6:return s.pageSound?"Activé":"Désactivé";
+    case 5:switch(animationFor(s)) { case TransitionKind::Curl:return tr("Page curl","Page Curl"); case TransitionKind::Slide:return tr("Slide","Slide"); case TransitionKind::None:return tr("None","Aucune"); } break;
+    case 6:return s.pageSound?tr("On","Activé"):tr("Off","Désactivé");
     case 7:return std::to_string(s.soundVolume*25)+" %";
-    case 8: { const char* fonts[]={"Système","Serif","Sans","Mono"}; return fonts[s.fontFamily]; }
-    case 9:return s.bookmarkScreenshot?"Activée":"Désactivée";
-    case 10: { const char* orientations[]={"Horizontal","Vertical droite","Vertical gauche"}; return orientations[static_cast<int>(s.orientation)]; }
+    case 8: { const char* fonts[]={tr("System","Système"),"Serif","Sans","Mono"}; return fonts[s.fontFamily]; }
+    case 9:return s.bookmarkScreenshot?tr("On","Activée"):tr("Off","Désactivée");
+    case 10: { const char* orientations[]={tr("Landscape","Horizontal"),tr("Portrait right","Vertical droite"),tr("Portrait left","Vertical gauche")}; return orientations[static_cast<int>(s.orientation)]; }
     default:return {};
   }
   return {};
