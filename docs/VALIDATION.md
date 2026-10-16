@@ -1,5 +1,11 @@
 # Validation gate
 
+## PDF speed, landscape size and touch — version 00.11
+
+[Run 38914013174](https://github.com/ocelot-oss/Vreed/actions/runs/38914013174) passed all seven portable suites and native Vita packaging for `00c810c58da083c7919a90545b37683a6f22c048`. The real MuPDF test confirms repeated requests reuse the recent rendered image. Orientation tests cover landscape PDF bounds, unchanged portrait dimensions, side taps, completed horizontal swipes, vertical panning and contact cancellation. The downloaded 32596833-byte VPK passed SHA-256, ZIP integrity, SFO version/title ID, branding and license checks.
+
+PDF turns now skip animation captures and reuse up to three recent rasters within a 16 MiB cache. Landscape defaults to near-full-width display; tall pages require vertical panning, with Cross available for whole-page fit. No device latency or FPS claim is made. See [PDF device checks](DEVICE_REVIEW_8.md).
+
 ## Portrait reading — version 00.10
 
 [Run 37753468103](https://github.com/ocelot-oss/Vreed/actions/runs/37753468103) passed all seven portable suites and native Vita packaging for `cf73de1e52d71abf81a8821d553abd77228a3367`. Orientation regressions cover portrait layout bounds, spread fallback/restoration, curl UV coordinates, touch/control remapping, persisted orientation and legacy settings migration. The downloaded 32591640-byte VPK passed SHA-256, ZIP integrity, SFO version/title ID, packaged branding and license checks.

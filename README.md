@@ -2,7 +2,9 @@
 
 A native EPUB and PDF reader for homebrew-enabled **PS Vita** systems. Browse a bookshelf, read on warm paper or a true-black OLED theme, and keep your place with a bookmark ribbon.
 
-**Development version: 00.11.** PDF navigation now uses immediate page changes, reuses recently rendered pages, and supports swipe/tap page turns plus vertical touch panning. Landscape PDFs use almost the full screen width by default; Cross switches to whole-page fit. Portrait sizing is unchanged. The published 00.10 beta remains available in Releases until the next package is verified.
+**Development version: 00.11.** PDF navigation now uses immediate page changes, reuses recently rendered pages, and supports swipe/tap page turns plus vertical touch panning. Landscape PDFs use almost the full screen width by default; Cross switches to whole-page fit. Portrait sizing is unchanged. The published 00.10 beta remains available in Releases; 00.11 is currently provided as a development build.
+
+The [00.11 build](https://github.com/ocelot-oss/Vreed/actions/runs/38914013174) passed all seven portable suites and native Vita packaging. Its VPK and complete sources are available in that run's temporary artifacts; real-device PDF latency and touch comfort still require feedback.
 
 ## Download and install
 
