@@ -6,6 +6,7 @@
 #include "platform/vita_audio.hpp"
 #include "platform/frame_stats.hpp"
 #include "input/pdf_gesture.hpp"
+#include "storage/library_settings.hpp"
 namespace vr {
 class App {
 public: void run();
@@ -30,6 +31,13 @@ private:
   bool jumpOpen_=false;
   std::size_t jumpPage_=0,jumpCount_=1;
   int settingRow_=0;
+  std::string libraryDirectory_=config::books,browseDirectory_;
+  bool libraryOptions_=false,directoryBrowser_=false;
+  int libraryOption_=0,directoryOption_=0;
+  std::vector<std::string> directoryChoices_;
+  void browseDirectory(const std::string& path);
+  void chooseDirectory(const std::string& path);
+  void libraryOptionsInput(const Input& input);
   struct TemporaryBookmark { bool set=false; std::size_t chapter=0,offset=0; } bookmark_;
   bool bookmarked() const;
   void changeSetting(int direction,const Measure& measure);

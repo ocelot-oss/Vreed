@@ -9,6 +9,7 @@ struct Book {
   enum class Format { Epub, Pdf }; Format format=Format::Epub;
 };
 std::vector<Book> discover(const std::string& directory);
+std::vector<std::string> directories(const std::string& directory);
 void prepareStorage();
 Position loadPosition(const std::string& path,const std::string& directory="");
 bool savePosition(const std::string& path,Position position,const std::string& directory="");

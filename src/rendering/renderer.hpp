@@ -26,6 +26,8 @@ public:
   void configure(const Presentation& presentation);
   void begin(bool reading); void finish();
   void library(const std::vector<Book>& books,std::size_t selected,double nowMs=0);
+  void libraryDirectory(const std::string& directory) { libraryDirectory_=directory; }
+  void menuPanel(const std::string& title,const std::string& subtitle,const std::vector<std::string>& choices,int selected);
   bool captureOpening(const std::vector<Book>& books,std::size_t selected,Session& session,const Session::VisiblePage& second);
   void opening(float progress,std::size_t selected);
   void reader(const Book& book,const Page& page,Position position,std::size_t pageCount,
@@ -41,6 +43,7 @@ public:
   void message(const std::string& message);
 private:
   float landscapeProjection_[16]{};
+  std::string libraryDirectory_="ux0:/data/VitaReader/books";
   void projection(Orientation orientation);
   void drawScene(vita2d_texture* texture,float offset=0,unsigned color=0xffffffff);
   void clip(const Rect& area);

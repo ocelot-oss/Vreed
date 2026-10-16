@@ -1,8 +1,10 @@
 # Vreed
 
+**Development version: 00.12.** In the main library, press **Triangle → Choisir le dossier des livres** to browse folders, then select **Choisir ce dossier**. **Autres stockages** lists Vita mount points, including ux0 and uma0. The selected folder is saved for future launches and applies to both EPUB and PDF files. **Rétablir le dossier par défaut** restores `ux0:/data/VitaReader/books/`; **Actualiser les livres** rescans the current folder. Circle returns from the folder selector; Triangle closes the menu. Touch selects a row and a second tap opens it; L/R jumps eight entries.
+
 A native EPUB and PDF reader for homebrew-enabled **PS Vita** systems. Browse a bookshelf, read on warm paper or a true-black OLED theme, and keep your place with a bookmark ribbon.
 
-**Development version: 00.11.** PDF navigation now uses immediate page changes, reuses recently rendered pages, and supports swipe/tap page turns plus vertical touch panning. Landscape PDFs use almost the full screen width by default; Cross switches to whole-page fit. Portrait sizing is unchanged. The published 00.10 beta remains available in Releases; 00.11 is currently provided as a development build.
+Since 00.11, PDF navigation uses immediate page changes, reuses recently rendered pages, and supports swipe/tap page turns plus vertical touch panning. Landscape PDFs use almost the full screen width by default; Cross switches to whole-page fit. Portrait sizing is unchanged. The published 00.10 beta remains available in Releases; newer development builds are provided through Actions.
 
 The [00.11 build](https://github.com/ocelot-oss/Vreed/actions/runs/38914013174) passed all seven portable suites and native Vita packaging. Its VPK and complete sources are available in that run's temporary artifacts; real-device PDF latency and touch comfort still require feedback.
 
@@ -11,7 +13,7 @@ The [00.11 build](https://github.com/ocelot-oss/Vreed/actions/runs/38914013174) 
 1. Open [Releases](https://github.com/ocelot-oss/Vreed/releases) and download **Vreed.vpk** from the 00.10 beta release.
 2. Copy the VPK to your Vita and install it with **VitaShell**.
 3. Launch Vreed once. It creates `ux0:/data/VitaReader/books/` automatically.
-4. Copy your `.epub` and `.pdf` files into that directory using VitaShell USB or FTP, then press **Triangle** in the library to refresh.
+4. Copy your `.epub` and `.pdf` files into that directory using VitaShell USB or FTP, then press **Triangle → Actualiser les livres** in the library. From 00.12, the same menu also lets you choose another folder.
 
 Updates retain the title ID `VITARD001` and the existing `ux0:/data/VitaReader/` data directory, preserving books, settings and saved positions. The legacy directory name is intentional. Discovery scans the top level of the books directory, supports case-insensitive extensions and is limited to 512 files.
 
@@ -35,7 +37,7 @@ The library shows colored book spines, moving mascot poses and an opening-book a
 | Circle | Dismiss an error | Close an overlay, or save and return to the library |
 | L / R | — | Previous / next page or spread; adjust a setting |
 | L + R together | — | Open the whole-book page chooser |
-| Triangle | Refresh the library | Open / close reading settings |
+| Triangle | Open / close library options (00.12) | Open / close reading settings |
 | Square | — | Save / move / retract the BOOK bookmark |
 | Front touch | Tap to select, tap again to open | Swipe to turn pages; drag the page chooser slider |
 | START | Quit | — |

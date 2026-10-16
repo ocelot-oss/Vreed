@@ -186,7 +186,7 @@ void Renderer::library(const std::vector<Book>& books,std::size_t selected,doubl
     vita2d_draw_rectangle(28,y,904,2,RGBA8(157,111,71,255));
     for(int line=0;line<5;++line)vita2d_draw_rectangle(32,y+4+line*2,896,1,RGBA8(43,28,18,25));
   }
-  if(books.empty()) { text(42,210,"Ajoutez vos fichiers EPUB ou PDF dans :",1.2f,RGBA8(54,44,36,255)); text(42,252,"ux0:/data/VitaReader/books",1.1f,RGBA8(54,44,36,255)); }
+  if(books.empty()) { text(42,210,"Ajoutez vos fichiers EPUB ou PDF dans :",1.2f,RGBA8(54,44,36,255)); text(42,252,fit(libraryDirectory_,865,1.0f),1.0f,RGBA8(54,44,36,255)); }
   const unsigned colors[]={RGBA8(77,109,103,255u),RGBA8(139,72,59,255u),RGBA8(119,97,142,255u),RGBA8(154,121,61,255u),RGBA8(61,86,121,255u),RGBA8(114,91,76,255u)};
   auto first=(selected/20)*20;
   for(std::size_t i=first;i<books.size()&&i<first+20;++i) {
@@ -209,7 +209,22 @@ void Renderer::library(const std::vector<Book>& books,std::size_t selected,doubl
     vita2d_draw_rectangle(x+8,bottom-27,56,1,RGBA8(239,218,173,150));
     text(x+10,bottom-9,books[i].position.resumePinned?"Signet":books[i].format==Book::Format::Pdf?"PDF":"EPUB",0.65f,RGBA8(242,224,186,255));
   }
-  text(42,518,"X Ouvrir · Toucher pour sélectionner · Triangle Actualiser",0.8f,RGBA8(105,91,74,255));
+  text(42,494,fit("Dossier : "+libraryDirectory_,875,0.6f),0.6f,RGBA8(105,91,74,255));
+  text(42,524,"X Ouvrir · Toucher pour sélectionner · Triangle Options",0.8f,RGBA8(105,91,74,255));
+}
+void Renderer::menuPanel(const std::string& title,const std::string& subtitle,const std::vector<std::string>& choices,int selected) {
+  const auto ink=RGBA8(54,44,36,255),muted=RGBA8(105,91,74,255);
+  vita2d_draw_rectangle(0,0,960,544,RGBA8(0,0,0,110));
+  vita2d_draw_rectangle(80,58,800,430,RGBA8(248,243,230,255));
+  text(104,102,title,1.2f,ink); text(104,134,fit(subtitle,752,0.8f),0.8f,muted);
+  const int first=(selected/8)*8;
+  for(int i=first;i<int(choices.size())&&i<first+8;++i) {
+    const int y=150+(i-first)*32;
+    if(i==selected)vita2d_draw_rectangle(96,y,768,30,RGBA8(228,211,177,255));
+    text(110,y+22,fit(choices[i],730,0.85f),0.85f,ink);
+  }
+  text(104,454,"X Choisir · O Retour · Triangle Fermer · L/R Parcourir",0.75f,muted);
+  text(104,477,std::to_string(selected+1)+" / "+std::to_string(choices.size()),0.65f,muted);
 }
 void Renderer::drawPage(const Page& page,int index,Position position,std::size_t count,std::size_t chapters) {
   const auto area=presentation_.content[index];

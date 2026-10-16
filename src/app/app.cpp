@@ -6,7 +6,50 @@
 #include <exception>
 #include <cstdio>
 #include <algorithm>
+#include <stdexcept>
 namespace vr {
+void App::browseDirectory(const std::string& path) {
+  std::vector<std::string> choices;
+  if(path.empty())choices={"ux0:/","uma0:/","imc0:/","xmc0:/","ur0:/","gro0:/","grw0:/"};
+  else {
+    choices=directories(path);
+    choices.insert(choices.begin(),{"Choisir ce dossier",".. Dossier parent","Autres stockages"});
+  }
+  browseDirectory_=path; directoryChoices_=std::move(choices); directoryOption_=0; directoryBrowser_=true;
+}
+void App::chooseDirectory(const std::string& path) {
+  const auto normalized=normalizeLibraryDirectory(path);
+  if(normalized.empty())throw std::runtime_error("Dossier invalide");
+  auto books=discover(normalized);
+  if(!saveLibraryDirectory(config::librarySettings,normalized))throw std::runtime_error("Dossier : "+storageFailure);
+  books_=std::move(books); selected_=0; libraryDirectory_=normalized; renderer_.libraryDirectory(normalized);
+  directoryBrowser_=false; libraryOptions_=false; error_.clear();
+}
+void App::libraryOptionsInput(const Input& input) {
+  if(input.back) { if(directoryBrowser_)directoryBrowser_=false; else libraryOptions_=false; return; }
+  auto& selected=directoryBrowser_?directoryOption_:libraryOption_;
+  const int count=directoryBrowser_?int(directoryChoices_.size()):3;
+  const int step=input.up?-1:input.down?1:input.previous?-8:input.next?8:0;
+  selected=std::clamp(selected+step,0,count-1);
+  bool activate=input.open;
+  if(input.touch.phase==TouchPhase::Down&&input.touch.x>=96&&input.touch.x<=864&&input.touch.y>=150&&input.touch.y<406) {
+    const int row=(selected/8)*8+int((input.touch.y-150)/32);
+    if(row<count) { activate=row==selected; selected=row; }
+  }
+  if(!activate)return;
+  if(!directoryBrowser_) {
+    if(selected==0) { auto books=discover(libraryDirectory_); books_=std::move(books); selected_=0; libraryOptions_=false; error_.clear(); }
+    else if(selected==2)chooseDirectory(config::books);
+    else {
+      try { browseDirectory(libraryDirectory_); error_.clear(); }
+      catch(const std::exception& e) { browseDirectory(""); error_=e.what(); }
+    }
+  } else if(browseDirectory_.empty()) { browseDirectory(directoryChoices_[selected]); error_.clear(); }
+  else if(selected==0)chooseDirectory(browseDirectory_);
+  else if(selected==1)browseDirectory(parentDirectory(browseDirectory_));
+  else if(selected==2)browseDirectory("");
+  else browseDirectory(joinDirectory(browseDirectory_,directoryChoices_[selected]));
+}
 bool App::bookmarked() const {
   return bookmark_.set&&session_.currentPageContains(bookmark_.chapter,bookmark_.offset);
 }
@@ -79,7 +122,8 @@ void App::run() {
     settings_=loadSettings(config::settings); audio_.settings(settings_.pageSound,settings_.soundVolume);
     try { renderer_.selectFont(settings_.fontFamily); }
     catch(const std::exception& e) { settings_.fontFamily=0; error_=e.what(); }
-    books_=discover(config::books); audio_.emit(AudioEvent::StartupMusic);
+    libraryDirectory_=loadLibraryDirectory(config::librarySettings); renderer_.libraryDirectory(libraryDirectory_);
+    audio_.emit(AudioEvent::StartupMusic); books_=discover(libraryDirectory_);
   } catch(const std::exception& e) { error_=e.what(); }
   auto measure=[&](const std::string& s,float scale){return renderer_.measure(s,scale);};
   bool running=true;
@@ -99,9 +143,11 @@ void App::run() {
         else if(input.nowMs-openingStarted_>=650)state_=State::Reader;
       } else if(state_==State::Library) {
         if(input.quit)running=false;
+        if(input.rescan) { libraryOptions_=!libraryOptions_; directoryBrowser_=false; error_.clear(); }
+        if(libraryOptions_)libraryOptionsInput(input);
+        else {
         if((input.up||input.previous)&&selected_>0)--selected_;
         if((input.down||input.next)&&selected_+1<books_.size())++selected_;
-        if(input.rescan) { books_=discover(config::books); selected_=0; error_.clear(); }
         if(input.back)error_.clear();
         if(input.touch.phase==TouchPhase::Down&&input.touch.x>=48&&input.touch.x<918) {
           const int row=input.touch.y>=290?1:0,col=int((input.touch.x-48)/87);
@@ -124,6 +170,7 @@ void App::run() {
           refreshPages_=true; refreshSecond(measure); renderer_.prepareImages({&session_.page(),second_.page.get()});
           if(renderer_.captureOpening(books_,selected_,session_,second_)) { state_=State::Opening; openingStarted_=platform_.nowMs(); }
           error_.clear();
+        }
         }
       } else {
         turnEvents(turn_.tick(input.nowMs),input.nowMs);
@@ -198,7 +245,13 @@ void App::run() {
       ribbon_.setVisible(bookmarked()&&settings_.mode==ReadingMode::Book,renderNow); ribbon_.tick(renderNow);
     }
     renderer_.begin(state_!=State::Library);
-    if(state_==State::Library)renderer_.library(books_,selected_,renderNow);
+    if(state_==State::Library) {
+      renderer_.library(books_,selected_,renderNow);
+      if(libraryOptions_) {
+        if(directoryBrowser_)renderer_.menuPanel("Choisir le dossier des livres",browseDirectory_.empty()?"Stockages de la Vita":browseDirectory_,directoryChoices_,directoryOption_);
+        else renderer_.menuPanel("Options de la bibliothèque",libraryDirectory_,{"Actualiser les livres","Choisir le dossier des livres","Rétablir le dossier par défaut"},libraryOption_);
+      }
+    }
     else if(state_==State::Opening)renderer_.opening(float((renderNow-openingStarted_)/650),selected_);
     else {
       if(turn_.motion().active()&&turn_.motion().kind()!=TransitionKind::None) {
