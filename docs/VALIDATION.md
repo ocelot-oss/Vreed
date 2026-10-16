@@ -1,5 +1,11 @@
 # Validation gate
 
+## English default and French option — version 00.13
+
+[Run 38947267427](https://github.com/ocelot-oss/Vreed/actions/runs/38947267427) passed all nine portable suites and native Vita packaging for `d552866b7234a7fbb4d517e99817233b1da36ab7`. The language suite verifies English by default, French and English persistence, shared live setting labels across translation units, invalid-value rejection, malformed-file fallback and backup reads. Existing EPUB/PDF, touch, folder, layout and session suites remain green.
+
+The downloaded 32621065-byte VPK passed SHA-256, ZIP integrity, SFO version/title ID, packaged branding and license checks. On-device label spacing, accents with each font, language selection through touch and persistence after a Vita restart still require review. See [language device checks](DEVICE_REVIEW_10.md).
+
 ## Configurable library folder — version 00.12
 
 [Run 38944680530](https://github.com/ocelot-oss/Vreed/actions/runs/38944680530) passed all eight portable suites and native Vita packaging for `3aa6635ce900e4201d49fbe0361df38a8b30ca59`. The new directory suite covers persistence, backup reads, invalid paths, paths with spaces, root/parent navigation, sorted folder enumeration, EPUB/PDF discovery and unavailable folders. The library menu uses a scan-and-save-before-switch flow; reading settings remain in their existing configuration file.

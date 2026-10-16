@@ -8,14 +8,14 @@ A native EPUB and PDF reader for homebrew-enabled **PS Vita** systems. Browse a 
 
 Since 00.11, PDF navigation uses immediate page changes, reuses recently rendered pages, and supports swipe/tap page turns plus vertical touch panning. Landscape PDFs use almost the full screen width by default; Cross switches to whole-page fit. Portrait sizing is unchanged. The published 00.10 beta remains available in Releases; newer development builds are provided through Actions.
 
-The [00.12 build](https://github.com/ocelot-oss/Vreed/actions/runs/38944680530) passed all eight portable suites and native Vita packaging. Its VPK and complete sources are available in that run's temporary artifacts; folder browsing on mounted Vita storage, PDF latency and touch comfort still require device feedback.
+The [00.13 build](https://github.com/ocelot-oss/Vreed/actions/runs/38947267427) passed all nine portable suites and native Vita packaging. Its VPK and complete sources are available in that run's temporary artifacts; bilingual label spacing, folder browsing on mounted Vita storage, PDF latency and touch comfort still require device feedback.
 
 ## Download and install
 
 1. Open [Releases](https://github.com/ocelot-oss/Vreed/releases) and download **Vreed.vpk** from the 00.10 beta release.
 2. Copy the VPK to your Vita and install it with **VitaShell**.
 3. Launch Vreed once. It creates `ux0:/data/VitaReader/books/` automatically.
-4. Copy your `.epub` and `.pdf` files into that directory using VitaShell USB or FTP, then press **Triangle → Actualiser les livres** in the library. From 00.12, the same menu also lets you choose another folder.
+4. Copy your `.epub` and `.pdf` files into that directory using VitaShell USB or FTP, then press **Triangle → Refresh books** in the library (Français: **Actualiser les livres**). From 00.12, the same menu also lets you choose another folder.
 
 Updates retain the title ID `VITARD001` and the existing `ux0:/data/VitaReader/` data directory, preserving books, settings and saved positions. The legacy directory name is intentional. Discovery scans the top level of the books directory, supports case-insensitive extensions and is limited to 512 files.
 
@@ -24,7 +24,7 @@ Updates retain the title ID `VITARD001` and the existing `ux0:/data/VitaReader/`
 - **BOOK:** warm paper, page curl, a running title and a bookmark ribbon; one page or a two-page spread in landscape.
 - **CLEAN:** an off-white page with generous margins.
 - **OLED NIGHT:** a true-black background with subdued text.
-- **Portrait:** press **Triangle → Orientation → Vertical droite / Vertical gauche**, then rotate the Vita. EPUB text reflows into a 544×960 single page; PDF pages keep their original layout. Touch and directional controls follow the orientation. L/R keep their previous/next roles. Returning to horizontal restores your spread preference.
+- **Portrait:** press **Triangle → Orientation → Portrait right / Portrait left** (Français: **Vertical droite / Vertical gauche**), then rotate the Vita. EPUB text reflows into a 544×960 single page; PDF pages keep their original layout. Touch and directional controls follow the orientation. L/R keep their previous/next roles. Returning to horizontal restores your spread preference.
 - **Fonts:** System, Serif, Sans and Mono, with adjustable size, spacing and margins. Wrapped body paragraphs are justified; headings and final paragraph lines remain left-aligned.
 - **PDF:** landscape starts in width-fit with narrow margins; portrait starts in page-fit. Press **Cross** to switch, then use **Up/Down** or drag vertically to pan a magnified page. Swipe horizontally or tap the left/right side to change pages. Page turns are immediate, and a bounded cache reuses up to three recent page rasters. PDFs retain their original fonts and illustrations.
 
@@ -50,7 +50,7 @@ In reading settings, Up/Down selects a row and Left/Right changes its value. Set
 
 Square pulls the BOOK ribbon and saves an explicit resume point, with a confirmation chime after successful storage. That point survives further navigation and application restarts. Square on the marked page retracts it and restores automatic resume; Square elsewhere moves it. Only the right-hand ribbon appears in a spread, while the saved position identifies the spread's first page.
 
-**Capture sur signet is disabled by default.** Enable it in reading settings to save a PNG when placing a bookmark. Captures go into `ux0:/data/Vreed/screenshots/`, created automatically: 960×544 in landscape, or upright 544×960 in portrait. Existing captures are retained when a bookmark is removed. A screenshot failure does not discard a successfully saved bookmark.
+**Bookmark screenshot is disabled by default** (Français: **Capture sur signet**). Enable it in reading settings to save a PNG when placing a bookmark. Captures go into `ux0:/data/Vreed/screenshots/`, created automatically: 960×544 in landscape, or upright 544×960 in portrait. Existing captures are retained when a bookmark is removed. A screenshot failure does not discard a successfully saved bookmark.
 
 Without an explicit bookmark, Vreed saves progress after navigation, setting changes and returning to the library. EPUB positions retain a text anchor across typography and orientation changes. Changing a book's contents can still move its resumed position.
 
